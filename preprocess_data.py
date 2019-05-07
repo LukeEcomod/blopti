@@ -58,16 +58,20 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
     can_arr = (can_arr - 1) * (-1)
     can_arr = np.array(can_arr, dtype=int)
     
+    # For some values of the canal raster there are no corresponding DEM values. Correct that by masking the canal raster
+    dem_mask = np.ones(shape=dem.shape, dtype=bool)
+    dem_mask[np.where(dem==-99999.0)] = False # -99999.0 is current value of dem for nodata points.
+    can_arr = can_arr * dem_mask
+    
     # Convert labels of canals to 1,2,3...
     aux =can_arr.flatten()
     aux_dem = dem.flatten()
     can_flat_arr = np.array(aux)
-    can_list = []
-    counter = 0
+
+    counter = 1
     for i, value in enumerate(aux):
-        if value > 0 and aux_dem[i] < 127: # if there is a canal in that pixel and if we have a dem value for that pixel. (Missing dem data points are labelled as 128)
+        if value > 0 and aux_dem[i] > 0: # if there is a canal in that pixel and if we have a dem value for that pixel. (Missing dem data points are labelled as -9999)
             can_flat_arr[i] = counter
-            can_list.append(counter)
             counter += 1
     rasterized_canals = can_flat_arr.reshape(can_arr.shape) # contains labels and positions of canals
     n_canals = int(rasterized_canals.max() + 1) 
@@ -79,11 +83,13 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
     for coords, label in np.ndenumerate(rasterized_canals):
         print(float(coords[0])/float(dem.shape[0])*100.0, " per cent of the reading completed" ) 
         if rasterized_canals[coords] > 0: # if coords correspond to a canal.
-            c_to_r_list[int(label)] = coords # take profit of loop to compute this list
+            c_to_r_list[int(label)] = coords # label=0 is not a canal. We delete it later.
             propagated_to = prop_to_neighbours(coords, rasterized_canals, dem, threshold=0.0)
             for i in propagated_to:
                 matrix[int(label), i] = 1 # adjacency matrix of the directed graph
-
+    
+    c_to_r_list = c_to_r_list[1:] # label=0 is not a canal. Delete it here.    
+    
     matrix_csr = matrix.tocsr() # compressed row format is more efficient for later
     matrix_csr.eliminate_zeros() # happens in place. Frees disk usage.
     

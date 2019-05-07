@@ -11,7 +11,7 @@ import datetime
 import hydro_utils, utilities
 
 def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
-              value_for_masked=0.0, diri_bc=None, neumann_bc = 0.0, plotOpt=False):
+              value_for_masked=0.0, diri_bc=0.2, neumann_bc = None, plotOpt=False):
     """
     INPUT:
         - ele: (nx,ny) sized NumPy array. Elevation in m above c.r.p.
@@ -62,7 +62,19 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
     
     mesh = fp.Grid2D(dx=dx, dy=dy, nx=nx, ny=ny)
     phi=fp.CellVariable(name='computed H', mesh=mesh,value=1., hasOld=True) #response variable H in meters above reference level               
-    phi.setValue(np.ravel(H))
+    
+    #*******omit areas outside the catchment. catchment_mask is input
+    cmask = fp.CellVariable(mesh=mesh, value=np.ravel(catchment_mask))
+    cmask_not = fp.CellVariable(mesh=mesh, value=np.array(~ cmask.value, dtype = bool))
+        #        cmask = fp.CellVariable(mesh=mesh, value=np.array(cmask.value, dtype = int))
+    # *** drain mask or canal mask
+    dr = np.array(wt_canal_arr, dtype=bool)
+    drmask=fp.CellVariable(mesh=mesh, value=np.ravel(dr))
+    drmask_not = fp.CellVariable(mesh=mesh, value= np.array(~ drmask.value, dtype = int))      # Complementary of the drains mask, but with ints {0,1}
+    
+    # mask away unnecesary stuff
+    phi.setValue(np.ravel(H)*cmask.value)
+    ele = ele * cmask.value
     
     #Added 19.10.2018
     bottom_ele = np.ones(np.shape(ele))*14.                                # elevation of the impearmeable bottom layer, m above sea level
@@ -83,41 +95,34 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
         raise ValueError("Cannot apply Dirichlet and Neumann boundary values at the same time. Contradictory values.")
        
     
-    #*******omit areas outside the catchment. c is input
-    cmask = fp.CellVariable(mesh=mesh, value=np.ravel(catchment_mask))
-    cmask_not = fp.CellVariable(mesh=mesh, value=np.array(~ cmask.value, dtype = int))
-    #        cmask = fp.CellVariable(mesh=mesh, value=np.array(cmask.value, dtype = int))
-    # *** drain mask or canal mask
-    dr = np.array(wt_canal_arr, dtype=bool)
-    drmask=fp.CellVariable(mesh=mesh, value=np.ravel(dr))
-    drmask_not = fp.CellVariable(mesh=mesh, value= np.array(~ drmask.value, dtype = int))      # Complementary of the drains mask, but with ints {0,1}
-    
     source = fp.CellVariable(mesh=mesh, value = 0.)                         # cell variable for source/sink
     D = fp.CellVariable(mesh=mesh, value=(hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)      # diffusion coefficient, transmissivity
     CC=fp.CellVariable(mesh=mesh, value=C(phi.value-ele))                   # differential water capacity
     
     largeValue=1e20                                                     # variable needed in implicit source term to apply internal boundaries
     
-    # mask away unnecesary stuff
-    phi.setValue(np.ravel(H)*cmask.value)
-    ele = ele * cmask.value
+
     
     
-    #plt.figure()
-    #plt.title("Transmissivity in the beginning")
-    #plt.imshow(((hToTra(ele-phi.value)-T_bottom)*cmask*drmask_not).value.reshape(ny,nx), cmap='pink'); plt.colorbar()
+
     if plotOpt:
         plt.figure()
+        plt.title("Transmissivity in the beginning")
+        plt.imshow((D.value).reshape(ny,nx), cmap='pink'); plt.colorbar()
+        
+        plt.figure()
         plt.title("C in the beginning")
-        plt.imshow(C(ele-phi.value).reshape(ny,nx), cmap='pink', interpolation='nearest')
+        plt.imshow((CC.value).reshape(ny,nx), cmap='pink', interpolation='nearest')
         
         plt.figure()
         plt.title("(DEM) elevation Initial state")
-        plt.imshow(ele.reshape(ny,nx), cmap='pink', interpolation='nearest', extent=[0,nx*dx,0,ny*dy]); plt.colorbar()
+#        plt.imshow(ele.reshape(ny,nx), cmap='pink', interpolation='nearest', extent=[0,nx*dx,0,ny*dy]); plt.colorbar()
+        plt.imshow(ele.reshape(ny,nx), cmap='pink', interpolation='nearest'); plt.colorbar()
         
         plt.figure()
         plt.title("elevation - phi Initial state")
-        plt.imshow((ele-phi.value).reshape(ny,nx), cmap='pink', interpolation='nearest', extent=[0,nx*dx,0,ny*dy]); plt.colorbar()
+#        plt.imshow((ele-phi.value).reshape(ny,nx), cmap='pink', interpolation='nearest', extent=[0,nx*dx,0,ny*dy]); plt.colorbar()
+        plt.imshow((ele-phi.value).reshape(ny,nx), cmap='pink', interpolation='nearest'); plt.colorbar()
         # For some later plot
     
     
@@ -261,8 +266,7 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
     if plotOpt:
         plt.figure() 
         plt.title("elevation-phi in the end")
-        plt.imshow((ele-phi.value).reshape(ny,nx), cmap='pink', interpolation='nearest', \
-            extent=[0,nx*dx,0,ny*dy]); plt.colorbar()
+        plt.imshow((ele-phi.value).reshape(ny,nx), cmap='pink', interpolation='nearest'); plt.colorbar()
         #        CS=plt.contour(X*dx,Y*dy,Z, levels, colors='g'); plt.clabel(CS, fontsize=10)
         
         #plt.figure()
@@ -276,8 +280,9 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
         
         plt.show()
         
-    change_in_canals = (ele-phi.value).reshape(ny,nx)*(drmask.value.reshape(ny,nx)) - ((ele-H)*drmask.value).reshape(ny,nx)
+    change_in_canals = ((ele-phi.value)*cmask.value*drmask.value).reshape(ny,nx) - ((ele-H)*cmask.value* drmask.value).reshape(ny,nx)
+    final_water_table = (phi.value).reshape(ny,nx)
 
         
 
-    return dry_peat_volume, change_in_canals
+    return dry_peat_volume, change_in_canals, final_water_table

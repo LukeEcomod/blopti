@@ -27,16 +27,13 @@ Read and preprocess data
 retrieve_canalarr_from_pickled = False
 preprocessed_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\preprocess"
 datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Canal_Block_Data\GIS_files\Stratification_layers"
-rst_dem_fn = datafolder + r"\dem_clip_cean.tif"
+dem_rst_fn = preprocessed_datafolder + r"\dem_filled_and_interpolated.tif"
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
     datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Canal_Block_Data\GIS_files\Stratification_layers"
-    preprocess_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\preprocess"
-    dem_rst_fn = r"\dem_clip_cean.tif"
     can_rst_fn = r"\can_rst_clipped.tif"
-    
-    CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=preprocess_datafolder+can_rst_fn,
-                                                                dem_rst_fn=datafolder+dem_rst_fn)
+    CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=preprocessed_datafolder+can_rst_fn,
+                                                                dem_rst_fn=dem_rst_fn)
 
 elif retrieve_canalarr_from_pickled==True:
     pickle_folder = r"C:\Users\L1817\ForestCarbon"
@@ -48,7 +45,7 @@ elif retrieve_canalarr_from_pickled==True:
 else:
     print "Canal adjacency matrix and raster loaded from memory."
 
-dem = utilities.read_DEM(rst_dem_fn)
+dem = utilities.read_DEM(dem_rst_fn)
 print("DEM read from file")
 
 srfcanlist =[dem[coords] for coords in c_to_r_list]
@@ -136,15 +133,17 @@ Hinitial = ele + hini #initial h (gwl) in the compartment.
 
 wt_canal_arr = np.zeros((ny,nx)) # (nx,ny) array with wt canal height in corresponding nodes
 for canaln, coords in enumerate(c_to_r_list):
-    wt_canal_arr[coords] = wt_canals[canaln]
+    if canaln == 0: 
+        continue # because c_to_r_list begins at 1
+    wt_canal_arr[coords] = wt_canals[canaln] 
     Hinitial[coords] = wt_canals[canaln]
 
 
 # catchment mask
 catchment_mask = np.ones(shape=Hinitial.shape, dtype=bool)
-catchment_mask[np.where(dem==128)] = False # 128 is current value of dem for nodata points.
+catchment_mask[np.where(dem==-99999.0)] = False # -99999.0 is current value of dem for nodata points.
 
-dry_peat_volume, cic = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, value_for_masked= 0.9, diri_bc=None, neumann_bc = 0.0, plotOpt=True)
+dry_peat_volume, cic, finalwt = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, value_for_masked= 0.9, diri_bc=None, neumann_bc = 0.0, plotOpt=True)
 
 
 """
