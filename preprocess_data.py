@@ -76,7 +76,7 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
     c_to_r_list = [0] * n_canals
     for coords, label in np.ndenumerate(rasterized_canals):
         print(float(coords[0])/float(dem.shape[0])*100.0, " per cent of the reading completed" ) 
-        if rasterized_canals[coords] > -1: # if coords correspond to a canal
+        if rasterized_canals[coords] > 0: # if coords correspond to a canal
             c_to_r_list[int(label)] = coords # take profit of loop to compute this list
             propagated_to = prop_to_neighbours(coords, rasterized_canals, dem, threshold=0.0)
             for i in propagated_to:
