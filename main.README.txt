@@ -1,0 +1,55 @@
+###UNDER CONSTRUCTION!
+Properties:
+- Each canal is a node --> info about canal wl stored in list, not array.
+
+Get input from file
+    Parameters:
+        - n of nodes
+        - n of canals
+        - n of nodes per canal
+        - block_height: depth at which wl in canal will be risen when a dam is located, compared to the surface level.
+        -
+    Input:
+        - WT level in canals
+        - soil level in canals
+Semantics:
+    - NODES are pixels or coordinates of the canals.
+    - DAM and BLOCK are used interchangeably.
+    - water TABLE and LEVEL are used interchangeably. (Although water table should be left for underground, and water level for canals).
+    - ENERGY and TEMPERATURE are borrowed from physical jargon when studying thermodinamical systems.
+    In this case: energy=area/volume of dry peat (we want to decrease it); temperature=probability with which to accept to place a dam that wouldn't decrease energy. 
+    
+Structure:
+    - Preprocess data:
+        - Read canal shapefile, and DEM
+        - Map canal vectors into DEM raster (probably results in downgrade of canal shapefile resolution)
+        - return cm=downgraded canal adjacency matrix. Later changed to CNM, cr= raster with names of canals in their positions,
+        c_to_r_list=indices are names of canals, values are coordinates in raster.
+        - Flip canals so that oWTcanArr is always ascending inside each canal--> inner water flow direction is respected. 
+        - Eliminate propagation between canals whose WT is not well-ordered. (If wt of last node of canal1 is greater than wt of first node of canal2, stop propagation).
+        - Randomly place some dams and compute initial configuration of water level in canals.
+        - Optimize (maximize) water table level in canals using self-coded Metropolis or SimulatedAnnealing algorithm. Plot energy variation with temperature.
+        - (Optional) Plot optimization flow.
+        - Flip back nodes inside canals.
+  	- Optionally  write (and read) some excel outputs.
+	- Run hydrology simulation with optimized canal array as input. Output: optional plotting; total dry peat volume.
+        
+        
+Variables:
+    - block_height: float. Difference btwn canal water level and surface when a dam is located (m).
+    - nodes_per_canal: list. How many nodes in each canal.
+    - srfcanArr: list of lists. First level: number of canal; 2nd level node of each canal. Value of the DEM for each raster position where there is a canal.
+    - oWTcanArr: same structure as srfcanArr. Original water table in canals
+    - iWTcanArr: same structure as srfcanArr. Initial (after first random dam location) water table in canals
+    - WTcanal and WT0: same strucutre as above. WTcanal is final (after optimization) wt level of canals; WT0 is dummy variable for optimization.
+    - DEPRECATED ktonodesdict: Translation between absolute and relative (within canal) node position
+    - DEPRECATED prohibited_list: list of nodes that can't have a dam (main reason: its effect would be superposed with that of another dam)
+    - kvector: binary list. 1 if dam exists in that node and 0 otherwise.
+    - kvectorARR: list of list. Same info as kvector, but with the structure of srfcanArr and others.
+    - bpos: list. Same info as the kvector but in different format.
+    - E0canal: float. Dry peat volume in canals  after optimization.
+    - acc: number of accepted moves of dams.
+    - nx, ny: dimensions of raster
+    - dx dimensions of pixel in raster.
+    - ele, hini and others: check python hydrology module.
+    - pv: total dry peat volume after hydrology simulation
