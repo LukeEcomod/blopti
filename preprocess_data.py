@@ -10,6 +10,7 @@ import geopandas as gpd
 import rasterio
 from rasterio import features 
 import utilities
+import scipy.sparse
 
       
 # Build the adjacency matrix up
@@ -27,7 +28,7 @@ def prop_to_neighbours(pixel_coords, rasterized_canals, dem, threshold=0.0):
                               (pc0,pc1-1),               (pc0,pc1+1),
                               (pc0+1,pc1-1), (pc0+1,pc1), (pc0+1,pc1+1)])
     for cc in candidate_coords_list:
-        if padded_can_arr[cc] > -1: # pixel corresponds to a canal
+        if padded_can_arr[cc] > 0: # pixel corresponds to a canal
             if padded_dem[cc] - padded_dem[pc0,pc1] > -threshold:
                 prop_to.append(int(padded_can_arr[cc]))      
     return prop_to
@@ -59,11 +60,12 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
     
     # Convert labels of canals to 1,2,3...
     aux =can_arr.flatten()
+    aux_dem = dem.flatten()
     can_flat_arr = np.array(aux)
     can_list = []
     counter = 0
     for i, value in enumerate(aux):
-        if value > 0:
+        if value > 0 and aux_dem[i] < 127: # if there is a canal in that pixel and if we have a dem value for that pixel. (Missing dem data points are labelled as 128)
             can_flat_arr[i] = counter
             can_list.append(counter)
             counter += 1
@@ -71,19 +73,21 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
     n_canals = int(rasterized_canals.max() + 1) 
     
     # compute matrix AND dict
-    matrix = np.zeros(shape=(n_canals,n_canals))
+    matrix = scipy.sparse.lil_matrix((n_canals, n_canals)) # lil matrix is good to build it incrementally
 
     c_to_r_list = [0] * n_canals
     for coords, label in np.ndenumerate(rasterized_canals):
         print(float(coords[0])/float(dem.shape[0])*100.0, " per cent of the reading completed" ) 
-        if rasterized_canals[coords] > 0: # if coords correspond to a canal
+        if rasterized_canals[coords] > 0: # if coords correspond to a canal.
             c_to_r_list[int(label)] = coords # take profit of loop to compute this list
             propagated_to = prop_to_neighbours(coords, rasterized_canals, dem, threshold=0.0)
             for i in propagated_to:
                 matrix[int(label), i] = 1 # adjacency matrix of the directed graph
 
+    matrix_csr = matrix.tocsr() # compressed row format is more efficient for later
+    matrix_csr.eliminate_zeros() # happens in place. Frees disk usage.
     
-    return matrix, rasterized_canals, c_to_r_list
+    return matrix_csr, rasterized_canals, c_to_r_list
 
             
 if __name__== '__main__':

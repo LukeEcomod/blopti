@@ -29,20 +29,20 @@ preprocessed_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_Wat
 datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Canal_Block_Data\GIS_files\Stratification_layers"
 rst_dem_fn = datafolder + r"\dem_clip_cean.tif"
 
-if 'cm' and 'cr' and 'c_to_r_list' not in globals():
+if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
     datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Canal_Block_Data\GIS_files\Stratification_layers"
     preprocess_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\preprocess"
     dem_rst_fn = r"\dem_clip_cean.tif"
     can_rst_fn = r"\can_rst_clipped.tif"
     
-    cm, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=preprocess_datafolder+can_rst_fn,
+    CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=preprocess_datafolder+can_rst_fn,
                                                                 dem_rst_fn=datafolder+dem_rst_fn)
 
 elif retrieve_canalarr_from_pickled==True:
     pickle_folder = r"C:\Users\L1817\ForestCarbon"
     pickled_canal_array_fn = r'\50x50_DEM_and_canals.pkl'
     with open(pickle_folder + pickled_canal_array_fn) as f:
-        cm, cr, c_to_r_list = pickle.load(f)
+        CNM, cr, c_to_r_list = pickle.load(f)
     print "Canal adjacency matrix and raster loaded from pickled."
     
 else:
@@ -61,9 +61,6 @@ block_height = 0.4 # water level of canal after placing dam.
 canal_water_level = 1.2
 oWTcanlist = [x - canal_water_level for x in srfcanlist]
 
-
-CNM = sparse.csr_matrix(cm)
-CNM.eliminate_zeros()  # happens in place. Frees disk usage.
 
 
 """
