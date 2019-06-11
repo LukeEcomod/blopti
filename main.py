@@ -59,6 +59,10 @@ canal_water_level = 1.2
 oWTcanlist = [x - canal_water_level for x in srfcanlist]
 
 
+# READ SOILTYPES. TODO: WRITE INTO FUNCTION
+soiltypes = utilities.read_DEM(r"Canal_Block_Data/GIS_files/Stratification_layers/MoEF_lc_reclas.tif") 
+soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
+
 
 """
 Initial configuration of blocks in canals
