@@ -10,6 +10,8 @@ import matplotlib.pyplot as plt
 import datetime
 import hydro_utils, utilities
 
+fp.solvers.DefaultSolver = fp.solvers.LinearLUSolver
+
 def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
               value_for_masked=0.0, diri_bc=0.2, neumann_bc = None, plotOpt=False):
     """
@@ -35,9 +37,9 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
     # Added 19.10.2018
     spara ={ 
     'mesic':{
-    'nLyrs':200, 'dzLyr': 0.05,  'Kadjust':5.0,
-    'peat type':['L','L','L','L','L','L','L'], 'peat type bottom':['L'],
-    'vonP top': [5,5,6,6,7,7,8,8], 'vonP bottom': 8 },
+    'nLyrs':400, 'dzLyr': 0.05,  'Kadjust':50.0,
+    'peat type':['L','L','L','L','L','L','L'], 'peat type bottom':['S'],
+    'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8], 'vonP bottom': 10 },
     } 
     
     spara = spara['mesic']
@@ -90,14 +92,18 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
        phi.faceGrad.constrain([-neumann_bc], mesh.facesTop) 
        phi.faceGrad.constrain([+neumann_bc], mesh.facesBottom)
        phi.faceGrad.constrain([+neumann_bc], mesh.facesLeft)
+
        
     else:
         raise ValueError("Cannot apply Dirichlet and Neumann boundary values at the same time. Contradictory values.")
        
     
     source = fp.CellVariable(mesh=mesh, value = 0.)                         # cell variable for source/sink
-    D = fp.CellVariable(mesh=mesh, value=(hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)      # diffusion coefficient, transmissivity
-    CC=fp.CellVariable(mesh=mesh, value=C(phi.value-ele))                   # differential water capacity
+    dd = fp.CellVariable(mesh=mesh, value=(hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)      # diffusion coefficient, transmissivity
+    D = fp.FaceVariable(mesh=mesh, value = dd.arithmeticFaceValue.value)
+#    CC=fp.CellVariable(mesh=mesh, value=C(phi.value-ele))                   # differential water capacity
+    
+    
     
     largeValue=1e20                                                     # variable needed in implicit source term to apply internal boundaries
     
@@ -108,11 +114,11 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
     if plotOpt:
         plt.figure()
         plt.title("Transmissivity in the beginning")
-        plt.imshow((D.value).reshape(ny,nx), cmap='pink'); plt.colorbar()
+        plt.imshow((dd.value).reshape(ny,nx), cmap='pink'); plt.colorbar()
         
-        plt.figure()
-        plt.title("C in the beginning")
-        plt.imshow((CC.value).reshape(ny,nx), cmap='pink', interpolation='nearest')
+#        plt.figure()
+#        plt.title("C in the beginning")
+#        plt.imshow((CC.value).reshape(ny,nx), cmap='pink', interpolation='nearest')
         
         plt.figure()
         plt.title("(DEM) elevation Initial state")
@@ -126,7 +132,7 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
         # For some later plot
     
     
-    steady_state = False
+    steady_state = True
     if not steady_state:        
 #        eq = fp.TransientTerm(coeff=CC) == (fp.DiffusionTerm(coeff=hToTra(phi.value-ele)*cmask*drmask_not) + source*cmask*drmask_not
 #                          - fp.ImplicitSourceTerm(drmask*largeValue) + drmask*largeValue*(np.ravel(wt_canal_arr))
@@ -137,7 +143,7 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
                               - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*(value_for_masked)
                               )
     elif steady_state:
-        eq = 0. == (fp.DiffusionTerm(coeff=hToTra(phi.value-ele)*cmask*drmask_not) + source*cmask*drmask_not
+        eq = 0. == (fp.DiffusionTerm(coeff=D) + source*cmask*drmask_not
                 - fp.ImplicitSourceTerm(drmask*largeValue) + drmask*largeValue*(np.ravel(wt_canal_arr))
                 - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*(value_for_masked)
                 )
@@ -169,13 +175,16 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
 #            print 'source', min(source.value), max(source.value)
             res = 1e+10; resOld=1e+10
             phi.updateOld()                
-            D.setValue((hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)
-            CC.setValue(C(phi.value-ele))    
+            dd.setValue((hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)
+            D.setValue(dd.arithmeticFaceValue.value)
+#            CC.setValue(C(phi.value-ele))    
             
             for r in range(100):
                 resOld=res                
-                res = eq.sweep(var=phi,dt=dt)
-                D.setValue((hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)
+#                res = eq.sweep(var=phi,dt=dt)
+                res = eq.sweep(var=phi)
+                dd.setValue((hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)
+                D.setValue(dd.arithmeticFaceValue.value)
 #                print '    ', r, res                
                 if res < 1e-7: break
                 if res>=resOld: break    

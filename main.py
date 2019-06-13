@@ -10,7 +10,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.sparse as sparse
-import preprocess_data,  utilities, hydro
+import preprocess_data,  utilities, hydro, hydro_steadystate, hydro_utils
 
 
 
@@ -46,7 +46,22 @@ else:
     print "Canal adjacency matrix and raster loaded from memory."
 
 dem = utilities.read_DEM(dem_rst_fn)
+
 print("DEM read from file")
+
+# soil types and soil physical properties:
+peat_type_mask_raw = utilities.read_DEM(r"Canal_Block_Data/GIS_files/Stratification_layers/MoEF_lc_reclas.tif")
+# Pad a couple of columns and rows to match dem
+peat_type_mask = np.ones(shape=(peat_type_mask_raw.shape[0]+2, peat_type_mask_raw.shape[1]+1)) * 255 
+peat_type_mask[2:,1:] = peat_type_mask_raw 
+
+h_to_tra_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
+#soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
+
+BOTTOM_ELE = -7.0 # meters with respect to sea level. Or at least to same common ref. point as the dem. Can be negative!
+peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE - dem
+tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask,
+                                           gwt=peat_bottom_elevation, h_to_tra_dict=h_to_tra_dict)
 
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
@@ -58,10 +73,6 @@ block_height = 0.4 # water level of canal after placing dam.
 canal_water_level = 1.2
 oWTcanlist = [x - canal_water_level for x in srfcanlist]
 
-
-# READ SOILTYPES. TODO: WRITE INTO FUNCTION
-soiltypes = utilities.read_DEM(r"Canal_Block_Data/GIS_files/Stratification_layers/MoEF_lc_reclas.tif") 
-soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
 
 
 """
@@ -132,6 +143,7 @@ hini = - 0.9 # initial wt wrt surface elevation in meters.
 #clean_dem = dem[~dem.mask] 
 
 ele = dem
+
 Hinitial = ele + hini #initial h (gwl) in the compartment.
 #depth = np.ones(shape=Hinitial.shape) # elevation of the impermeable bottom from comon ref. point
 
@@ -147,8 +159,14 @@ for canaln, coords in enumerate(c_to_r_list):
 catchment_mask = np.ones(shape=Hinitial.shape, dtype=bool)
 catchment_mask[np.where(dem==-99999.0)] = False # -99999.0 is current value of dem for nodata points.
 
-dry_peat_volume, cic, finalwt = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, value_for_masked= 0.9, diri_bc=None, neumann_bc = 0.0, plotOpt=True)
+dry_peat_volume, cic, finalwt = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
+                                                  peat_type_mask=peat_type_mask, httd=h_to_tra_dict, tra_to_cut=tra_to_cut,
+                                                  value_for_masked= 0.9, diri_bc=None, neumann_bc = 0.0, 
+                                                  plotOpt=False)
 
+# OLD AND BAD HYDROLOGY:
+#dry_peat_volume = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
+#              value_for_masked=0.9, diri_bc=None, neumann_bc = 0.0, plotOpt=True)
 
 """
 Final printings

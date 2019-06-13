@@ -181,6 +181,99 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
     del tr
     return gwlToSto, stoToGwl, gwlToTra, C
 
+def peat_map_interp_functions():
+    """
+    OUTPUT: Produces two dictionaries of  functions for each soil type.
+        h_to_tra_dict is the interp. func. that maps gwt to transmissivity for the whole saturated depth.
+        tr_cut_dict 
+    """
+    # Soil parameters
+    spara ={
+    'gen':{'nLyrs':400, 'dzLyr': 0.05}, # General soil parameters, common to all soil types
+    
+    'Water':{'ref': 1, # reference number that appears on the peat type map
+            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':40.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+    
+    'Forest':{'ref': 2, # reference number that appears on the peat type map
+            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':40.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+    
+    'Secondaryforest-shrub':{'ref': 3, # reference number that appears on the peat type map
+            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':40.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+    
+    'Plantation':{'ref': 4, # reference number that appears on the peat type map
+            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':40.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+            
+    'Agriculture':{'ref': 5, # reference number that appears on the peat type map
+            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':40.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+             
+    'Wetland':{'ref': 6, # reference number that appears on the peat type map
+        'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+        'vonP bottom': 10, 'Kadjust':4.0,
+        'peat type top':'L', 'peat type bottom':['S']}
+    }
+    
+    # Common to all soil types
+    nLyrs = spara['gen']['nLyrs'] # Number of layers
+    dz = np.ones(nLyrs)*spara['gen']['dzLyr'] # thickness of layers, m
+    z = np.cumsum(dz)-dz/2.  # depth of the layer center point, m
+    
+    # Loop through all soil types to construct dictionary h_to_tra
+    h_to_tra_dict = {}
+    
+    for peat_type in [i for i in spara.keys() if i != 'gen']:
+        lenvp=len(spara[peat_type]['vonP top'])    
+        vonP = np.ones(nLyrs)*spara[peat_type]['vonP bottom']; vonP[0:lenvp] = spara[peat_type]['vonP top']  # degree of  decomposition, von Post scale
+        ptype = spara[peat_type]['peat type bottom']*nLyrs
+        peat_type_top_list = [spara[peat_type]['peat type top']]*lenvp
+        lenpt = len(spara[peat_type]['peat type top']); ptype[0:lenpt] = peat_type_top_list  
+        pF, Ksat = peat_hydrol_properties(vonP, var='H', ptype=ptype)  # peat hydraulic properties after Päivänen 1973    
+        _, _, hToTra, _ = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
+
+        h_to_tra_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra}
+
+    return h_to_tra_dict
+
+
+def peat_map_h_to_tra(soil_type_mask, gwt, h_to_tra_dict):
+    """
+    Input:
+        - soil_type_mask: nparray or flattened nparray of dim the DEM, and peat soil type numbers as elements.
+        - gwt: nparray or flattened nparray of gwt.
+            If gwt = phi-ele in the hydrology code, then the output is the full depth transmissivity
+            If gwt = bottom elevation - ele, then the ouput is the transmissivity to be cut from the above full depth trans.
+        - h_to_tra_dict: dict. Output of peat_map_interp_functions().
+    
+    Output:
+        - tra: Flattened nparray of new transmissivities.
+    """
+    # MAYBE READ SOIL ARRAY TYPE HERE?
+    soil_type_mask = np.ravel(soil_type_mask) # in case it is not flattened
+    gwt = np.ravel(gwt)
+    
+    tra = np.ones(np.shape(soil_type_mask))*-999 # Initialize output array with nodata entries
+    
+    if soil_type_mask.size != gwt.size:
+        raise ValueError('The two should have the same dimensions')
+        
+    for soil_type_number, value in h_to_tra_dict.iteritems():
+        indices = np.where(soil_type_mask == soil_type_number)
+        if np.shape(indices)[1]>0:
+            tra[indices] = value['hToTra'](gwt[indices])
+    
+    return tra
+
+
+
 def getRainfall(rainFile='C:\Users\L1817\Dropbox\PhD\Computation\hydro to Inaki\\rainfall.csv'):
     df=pd.read_csv(rainFile, names=['Date', 'P mm'], skiprows=1)
     df['Date']= pd.to_datetime(df['Date'])
