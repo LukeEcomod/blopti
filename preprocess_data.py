@@ -49,8 +49,10 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
     
     with rasterio.open(dem_rst_fn) as dem:
         dem = dem.read(1)
+        dem = dem[1:,1:-1] # cut some padding in the raster.
     with rasterio.open(can_rst_fn) as can:
         can_arr = can.read(1)
+        can_arr = can_arr[1:,1:-1]
 
     #Some small changes to get mask of canals: 1 where canals exist, 0 otherwise
     can_arr[abs(can_arr) < 0.5] = 0

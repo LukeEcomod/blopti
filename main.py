@@ -46,6 +46,7 @@ else:
     print "Canal adjacency matrix and raster loaded from memory."
 
 dem = utilities.read_DEM(dem_rst_fn)
+dem = dem[1:,1:-1]
 
 print("DEM read from file")
 
@@ -54,6 +55,7 @@ peat_type_mask_raw = utilities.read_DEM(r"Canal_Block_Data/GIS_files/Stratificat
 # Pad a couple of columns and rows to match dem
 peat_type_mask = np.ones(shape=(peat_type_mask_raw.shape[0]+2, peat_type_mask_raw.shape[1]+1)) * 255 
 peat_type_mask[2:,1:] = peat_type_mask_raw 
+peat_type_mask = peat_type_mask[1:,1:-1]
 
 h_to_tra_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
 #soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
