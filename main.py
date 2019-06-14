@@ -46,7 +46,7 @@ else:
     print "Canal adjacency matrix and raster loaded from memory."
 
 dem = utilities.read_DEM(dem_rst_fn)
-#dem = dem[1:,1:-1]
+
 # Eliminate disconnected regions
 #dem[555:580,5:45]=dem[0,0]
 #dem[555:570,80:110] = dem[0,0] # dem[0,0] is NoData Value
@@ -62,7 +62,7 @@ peat_type_mask_raw = utilities.read_DEM(r"Canal_Block_Data/GIS_files/Stratificat
 # Pad a couple of columns and rows to match dem
 peat_type_mask = np.ones(shape=(peat_type_mask_raw.shape[0]+2, peat_type_mask_raw.shape[1]+1)) * 255 
 peat_type_mask[2:,1:] = peat_type_mask_raw 
-#peat_type_mask = peat_type_mask[1:,1:-1]
+
 
 peat_type_mask = peat_type_mask * catchment_mask
 peat_type_mask[peat_type_mask == 255] = 5 # Fill nodata values with something
@@ -81,7 +81,7 @@ tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask,
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
 n_canals = len(c_to_r_list)
-n_blocks = 1
+n_blocks = 5
 block_height = 0.4 # water level of canal after placing dam.
 
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
@@ -171,7 +171,7 @@ for canaln, coords in enumerate(c_to_r_list):
 
 dry_peat_volume = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
                                                   peat_type_mask=peat_type_mask, httd=h_to_tra_dict, tra_to_cut=tra_to_cut,
-                                                  value_for_masked= 0.9, diri_bc=None, neumann_bc = 0.0, plotOpt=True)
+                                                  diri_bc=None, neumann_bc = 0.1, plotOpt=True)
 
 # Old and bad hydrology computation. Remove after finished with the checks
 #dry_peat_volume = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
