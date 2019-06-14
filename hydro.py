@@ -12,8 +12,8 @@ import hydro_utils, utilities
 
 fp.solvers.DefaultSolver = fp.solvers.LinearLUSolver
 
-def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
-              value_for_masked=0.0, diri_bc=0.2, neumann_bc = None, plotOpt=False):
+def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, peat_type_mask, httd, tra_to_cut,
+              value_for_masked=0.0, diri_bc=None, neumann_bc = 0.0, plotOpt=False):
     """
     INPUT:
         - ele: (nx,ny) sized NumPy array. Elevation in m above c.r.p.
@@ -99,8 +99,23 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
        
     
     source = fp.CellVariable(mesh=mesh, value = 0.)                         # cell variable for source/sink
-    dd = fp.CellVariable(mesh=mesh, value=(hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)      # diffusion coefficient, transmissivity
-    D = fp.FaceVariable(mesh=mesh, value = dd.arithmeticFaceValue.value)
+#    dd = fp.CellVariable(mesh=mesh, value=(hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)      # diffusion coefficient, transmissivity
+#    D = fp.FaceVariable(mesh=mesh, value = dd.arithmeticFaceValue.value)
+
+    def D_value(phi, ele, tra_to_cut, cmask, drmask_not):
+            # Some inputs are in fipy CellVariable type
+            gwt = phi.value - ele
+            
+            d = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=gwt, h_to_tra_dict=httd) - tra_to_cut
+            d = d *cmask.value *drmask_not.value        
+    
+            dface = fp.CellVariable(mesh=mesh, value=d) # diffusion coefficient, transmissivity. As a cell variable.
+            dface = fp.FaceVariable(mesh=mesh, value= dface.arithmeticFaceValue.value) # THe correct Face variable.
+    
+            return dface.value
+
+    D = fp.FaceVariable(mesh=mesh, value= D_value(phi, ele, Tr_cut*cmask.value*drmask_not.value, cmask, drmask_not))
+
 #    CC=fp.CellVariable(mesh=mesh, value=C(phi.value-ele))                   # differential water capacity
     
     
@@ -112,9 +127,9 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
     
 
     if plotOpt:
-        plt.figure()
-        plt.title("Transmissivity in the beginning")
-        plt.imshow((dd.value).reshape(ny,nx), cmap='pink'); plt.colorbar()
+#        plt.figure()
+#        plt.title("Transmissivity in the beginning")
+#        plt.imshow((dd.value).reshape(ny,nx), cmap='pink'); plt.colorbar()
         
 #        plt.figure()
 #        plt.title("C in the beginning")
@@ -144,7 +159,7 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
                               )
     elif steady_state:
         eq = 0. == (fp.DiffusionTerm(coeff=D) + source*cmask*drmask_not
-                - fp.ImplicitSourceTerm(drmask*largeValue) + drmask*largeValue*(np.ravel(wt_canal_arr))
+                - fp.ImplicitSourceTerm(drmask*cmask_not*largeValue) + drmask*cmask_not*largeValue*(np.ravel(wt_canal_arr))
                 - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*(value_for_masked)
                 )
     #********************************************************
@@ -175,16 +190,16 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
 #            print 'source', min(source.value), max(source.value)
             res = 1e+10; resOld=1e+10
             phi.updateOld()                
-            dd.setValue((hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)
-            D.setValue(dd.arithmeticFaceValue.value)
+#            dd.setValue((hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)
+            D.setValue(D_value(phi, ele, Tr_cut*cmask.value*drmask_not.value, cmask, drmask_not))
 #            CC.setValue(C(phi.value-ele))    
             
             for r in range(100):
                 resOld=res                
 #                res = eq.sweep(var=phi,dt=dt)
                 res = eq.sweep(var=phi)
-                dd.setValue((hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)
-                D.setValue(dd.arithmeticFaceValue.value)
+#                dd.setValue((hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)
+                D.setValue(D_value(phi, ele, Tr_cut*cmask.value*drmask_not.value, cmask, drmask_not))
 #                print '    ', r, res                
                 if res < 1e-7: break
                 if res>=resOld: break    

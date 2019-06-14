@@ -13,7 +13,7 @@ import scipy.sparse as sparse
 import preprocess_data,  utilities, hydro, hydro_steadystate, hydro_utils
 
 
-
+plt.close("all")
 
 """
 Read general help on main.README.txt
@@ -46,29 +46,42 @@ else:
     print "Canal adjacency matrix and raster loaded from memory."
 
 dem = utilities.read_DEM(dem_rst_fn)
-dem = dem[1:,1:-1]
-
+#dem = dem[1:,1:-1]
+# Eliminate disconnected regions
+#dem[555:580,5:45]=dem[0,0]
+#dem[555:570,80:110] = dem[0,0] # dem[0,0] is NoData Value
 print("DEM read from file")
+
+# catchment mask
+catchment_mask = np.ones(shape=dem.shape, dtype=bool)
+catchment_mask[np.where(dem==-99999.0)] = False # -99999.0 is current value of dem for nodata points.
 
 # soil types and soil physical properties:
 peat_type_mask_raw = utilities.read_DEM(r"Canal_Block_Data/GIS_files/Stratification_layers/MoEF_lc_reclas.tif")
+
 # Pad a couple of columns and rows to match dem
 peat_type_mask = np.ones(shape=(peat_type_mask_raw.shape[0]+2, peat_type_mask_raw.shape[1]+1)) * 255 
 peat_type_mask[2:,1:] = peat_type_mask_raw 
-peat_type_mask = peat_type_mask[1:,1:-1]
+#peat_type_mask = peat_type_mask[1:,1:-1]
+
+peat_type_mask = peat_type_mask * catchment_mask
+peat_type_mask[peat_type_mask == 255] = 5 # Fill nodata values with something
 
 h_to_tra_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
 #soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
 
-BOTTOM_ELE = -7.0 # meters with respect to sea level. Or at least to same common ref. point as the dem. Can be negative!
-peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE - dem
+BOTTOM_ELE = -43.0 # meters with respect to sea level. Or at least to same common ref. point as the dem. Can be negative!
+#peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE - dem
+peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE
+peat_bottom_elevation = peat_bottom_elevation*catchment_mask
 tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask,
                                            gwt=peat_bottom_elevation, h_to_tra_dict=h_to_tra_dict)
+
 
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
 n_canals = len(c_to_r_list)
-n_blocks = 3
+n_blocks = 1
 block_height = 0.4 # water level of canal after placing dam.
 
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
@@ -156,19 +169,15 @@ for canaln, coords in enumerate(c_to_r_list):
     wt_canal_arr[coords] = wt_canals[canaln] 
     Hinitial[coords] = wt_canals[canaln]
 
-
-# catchment mask
-catchment_mask = np.ones(shape=Hinitial.shape, dtype=bool)
-catchment_mask[np.where(dem==-99999.0)] = False # -99999.0 is current value of dem for nodata points.
-
-dry_peat_volume, cic, finalwt = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
+dry_peat_volume = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
                                                   peat_type_mask=peat_type_mask, httd=h_to_tra_dict, tra_to_cut=tra_to_cut,
-                                                  value_for_masked= 0.9, diri_bc=None, neumann_bc = 0.0, 
-                                                  plotOpt=False)
+                                                  value_for_masked= 0.9, diri_bc=None, neumann_bc = 0.0, plotOpt=True)
 
-# OLD AND BAD HYDROLOGY:
+# Old and bad hydrology computation. Remove after finished with the checks
 #dry_peat_volume = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
-#              value_for_masked=0.9, diri_bc=None, neumann_bc = 0.0, plotOpt=True)
+#                                  peat_type_mask=peat_type_mask, httd=h_to_tra_dict, tra_to_cut=tra_to_cut,
+#                                  value_for_masked=0.9, diri_bc=None, neumann_bc = 0.0, plotOpt=True)
+
 
 """
 Final printings

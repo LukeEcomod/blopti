@@ -49,10 +49,10 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
     
     with rasterio.open(dem_rst_fn) as dem:
         dem = dem.read(1)
-        dem = dem[1:,1:-1] # cut some padding in the raster.
+#        dem = dem[1:,1:-1] # cut some padding in the raster.
     with rasterio.open(can_rst_fn) as can:
         can_arr = can.read(1)
-        can_arr = can_arr[1:,1:-1]
+#        can_arr = can_arr[1:,1:-1]
 
     #Some small changes to get mask of canals: 1 where canals exist, 0 otherwise
     can_arr[abs(can_arr) < 0.5] = 0
@@ -61,8 +61,8 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
     can_arr = np.array(can_arr, dtype=int)
     
     # For some values of the canal raster there are no corresponding DEM values. Correct that by masking the canal raster
-    dem_mask = np.ones(shape=dem.shape, dtype=bool)
-    dem_mask[np.where(dem==-99999.0)] = False # -99999.0 is current value of dem for nodata points.
+    dem_mask = np.ones(shape=dem.shape, dtype=int)
+    dem_mask[np.where(dem==-99999.0)] = 0.0 # -99999.0 is current value of dem for nodata points.
     can_arr = can_arr * dem_mask
     
     # Convert labels of canals to 1,2,3...
@@ -90,7 +90,7 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
             for i in propagated_to:
                 matrix[int(label), i] = 1 # adjacency matrix of the directed graph
     
-    c_to_r_list = c_to_r_list[1:] # label=0 is not a canal. Delete it here.    
+#    c_to_r_list = c_to_r_list[1:] # label=0 is not a canal. Delete it here.    
     
     matrix_csr = matrix.tocsr() # compressed row format is more efficient for later
     matrix_csr.eliminate_zeros() # happens in place. Frees disk usage.

@@ -189,7 +189,7 @@ def peat_map_interp_functions():
     """
     # Soil parameters
     spara ={
-    'gen':{'nLyrs':400, 'dzLyr': 0.05}, # General soil parameters, common to all soil types
+    'gen':{'nLyrs':400, 'dzLyr': 0.5}, # General soil parameters, common to all soil types
     
     'Water':{'ref': 1, # reference number that appears on the peat type map
             'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
@@ -219,7 +219,12 @@ def peat_map_interp_functions():
     'Wetland':{'ref': 6, # reference number that appears on the peat type map
         'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
         'vonP bottom': 10, 'Kadjust':4.0,
-        'peat type top':'L', 'peat type bottom':['S']}
+        'peat type top':'L', 'peat type bottom':['S']},
+               
+    'Developed':{'ref': 7, # reference number that appears on the peat type map
+        'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+        'vonP bottom': 10, 'Kadjust':4.0,
+        'peat type top':'L', 'peat type bottom':['S']},
     }
     
     # Common to all soil types
