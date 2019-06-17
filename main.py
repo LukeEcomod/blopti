@@ -10,6 +10,7 @@ import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.sparse as sparse
+
 import preprocess_data,  utilities, hydro, hydro_steadystate, hydro_utils
 
 
@@ -55,6 +56,13 @@ print("DEM read from file")
 # catchment mask
 catchment_mask = np.ones(shape=dem.shape, dtype=bool)
 catchment_mask[np.where(dem==-99999.0)] = False # -99999.0 is current value of dem for nodata points.
+
+# peel the dem
+boundary_mask, boundary_dirichlet = utilities.peel_raster(dem, catchment_mask)
+
+## after peeling, catchment_mask should only be the fruit:
+#catchment_mask_unpeeled =  catchment_mask[:]
+#catchment_mask[boundary_mask] = False
 
 # soil types and soil physical properties:
 peat_type_mask_raw = utilities.read_DEM(r"Canal_Block_Data/GIS_files/Stratification_layers/MoEF_lc_reclas.tif")
@@ -169,9 +177,9 @@ for canaln, coords in enumerate(c_to_r_list):
     wt_canal_arr[coords] = wt_canals[canaln] 
     Hinitial[coords] = wt_canals[canaln]
 
-dry_peat_volume = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
+dry_peat_volume, wt = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, boundary_mask, wt_canal_arr,
                                                   peat_type_mask=peat_type_mask, httd=h_to_tra_dict, tra_to_cut=tra_to_cut,
-                                                  diri_bc=None, neumann_bc = 0.1, plotOpt=True)
+                                                  diri_bc=diri_bc, neumann_bc = None, plotOpt=True, remove_ponding_water=True)
 
 # Old and bad hydrology computation. Remove after finished with the checks
 #dry_peat_volume = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,

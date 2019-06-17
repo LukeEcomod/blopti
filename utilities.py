@@ -10,6 +10,34 @@ import copy
 import matplotlib.pyplot as plt
 import rasterio
 import random
+import scipy.signal
+
+
+
+def peel_raster(raster, catchment_mask):
+    """
+    Given a raster and a mask, gets the "peeling" or "shell" of the raster. (Peeling here are points within the raster)
+    Input:
+        - raster: 2dimensional nparray. Raster to be peeled. The peeling is part of the raster.
+        - catchment_mask: 2dim nparray of same size as raster. This is the fruit in the peeling.
+    Output:
+        - peeling_mask: boolean nparray. Tells where the peeling is.
+        - peeling_values: nparray. Values of the peeling mask in the peeling.
+    """
+    # catchment mask boundaries by convolution
+    conv_double = np.array([[0,1,1,1,0],
+                            [1,1,1,1,1],
+                            [1,1,0,1,1],
+                            [1,1,1,1,1],
+                            [0,1,1,1,0]])
+    bound_double = scipy.signal.convolve2d(catchment_mask, conv_double, boundary='fill', fillvalue=False)
+    peeling_mask = np.ones(shape=catchment_mask.shape, dtype=bool)
+    peeling_mask[bound_double[2:-2,2:-2]==0] = False; peeling_mask[bound_double[2:-2,2:-2]==20] = False
+    
+    peeling_mask = (raster*peeling_mask) > 0
+    peeling_values = raster * peeling_mask
+    
+    return peeling_mask, peeling_values
 
 
 # NEW 23.11. ONE STEP OR MOVEMENT IN THE SIMULATED ANNEALING.
