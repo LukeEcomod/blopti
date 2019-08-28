@@ -26,9 +26,9 @@ Read and preprocess data
 """
 retrieve_canalarr_from_pickled = False
 preprocessed_datafolder = r"data"
-dem_rst_fn = preprocessed_datafolder + r"\lidar_100_resampled_interp.tif"
-can_rst_fn = preprocessed_datafolder + r"\canal_clipped_resampled_2.tif"
-peat_type_rst_fn = preprocessed_datafolder + r"\Landcover_clipped.tif"
+dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp.tif"
+can_rst_fn = preprocessed_datafolder + r"/canal_clipped_resampled_2.tif"
+peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
     CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=can_rst_fn, dem_rst_fn=dem_rst_fn)
