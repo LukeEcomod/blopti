@@ -25,7 +25,7 @@ time0 = time.time()
 Read and preprocess data
 """
 retrieve_canalarr_from_pickled = False
-preprocessed_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Data\corrected_vs_published"
+preprocessed_datafolder = r"data"
 dem_rst_fn = preprocessed_datafolder + r"\lidar_100_resampled_interp.tif"
 can_rst_fn = preprocessed_datafolder + r"\canal_clipped_resampled_2.tif"
 peat_type_rst_fn = preprocessed_datafolder + r"\Landcover_clipped.tif"
