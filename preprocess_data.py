@@ -6,13 +6,43 @@ Created on Thu Sep 27 09:57:45 2018
 """
 
 import numpy as np
-import geopandas as gpd
 import rasterio
-from rasterio import features 
-import utilities
 import scipy.sparse
 
       
+def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn):
+    """
+    Deals with issues specific to each  set of input data rasters.
+    Output
+    """
+    with rasterio.open(dem_rst_fn) as dem:
+        dem = dem.read(1)
+    with rasterio.open(can_rst_fn) as can:
+        can_arr = can.read(1)
+    with rasterio.open(peat_type_rst_fn) as pt:
+        peat_type_arr = pt.read(1)
+        
+        
+    #Some small changes to get mask of canals: 1 where canals exist, 0 otherwise
+    can_arr[can_arr < 0.5] = 0
+    can_arr[abs(can_arr) > 0.5] = 1
+    can_arr = np.array(can_arr, dtype=int)
+    
+    # Convert from numpy no data to -9999.0
+    dem[np.where(np.isnan(dem))] = -9999.0
+    
+    # control nodata values
+    peat_type_arr[peat_type_arr < 0] = -1
+    
+    # Eliminate rows and columns full of noData values.
+    # upper 5 rows, lower 5 rows, right 10 rows
+    dem = dem[7:-7, 3:-13]
+    can_arr = can_arr[7:-7, 3:-13]
+    peat_type_arr = peat_type_arr[7:-7, 3:-13]
+    
+    return can_arr, dem, peat_type_arr
+    
+
 # Build the adjacency matrix up
 def prop_to_neighbours(pixel_coords, rasterized_canals, dem, threshold=0.0):
     """Given a pixel where a canals exists, return list of canals that it would propagate to.
@@ -46,29 +76,15 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
         - out_arr: canal raster in NumPy array.
         - can_to_raster_list: list. Pixels corresponding to each canal.
     """
-    
-    with rasterio.open(dem_rst_fn) as dem:
-        dem = dem.read(1)
 
-    with rasterio.open(can_rst_fn) as can:
-        can_arr = can.read(1)
+    can_arr, dem, _ = read_preprocess_rasters(can_rst_fn, dem_rst_fn, dem_rst_fn)
 
-
-    #Some small changes to get mask of canals: 1 where canals exist, 0 otherwise
-    can_arr[abs(can_arr) < 0.5] = 0
-    can_arr[abs(can_arr) > 0.5] = 1
-    can_arr = (can_arr - 1) * (-1)
-    can_arr = np.array(can_arr, dtype=int)
-    
-    # For some values of the canal raster there are no corresponding DEM values. Correct that by masking the canal raster
-    dem_mask = np.ones(shape=dem.shape, dtype=int)
-    dem_mask[np.where(dem==-99999.0)] = 0.0 # -99999.0 is current value of dem for nodata points.
-    can_arr = can_arr * dem_mask
     
     # Convert labels of canals to 1,2,3...
     aux =can_arr.flatten()
-    aux_dem = dem.flatten()
     can_flat_arr = np.array(aux)
+    aux_dem = dem.flatten()
+    
 
     counter = 1
     for i, value in enumerate(aux):
@@ -83,14 +99,13 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
 
     c_to_r_list = [0] * n_canals
     for coords, label in np.ndenumerate(rasterized_canals):
-#        print(float(coords[0])/float(dem.shape[0])*100.0, " per cent of the reading completed" ) 
+        print(float(coords[0])/float(dem.shape[0])*100.0, " per cent of the reading completed" ) 
         if rasterized_canals[coords] > 0: # if coords correspond to a canal.
-            c_to_r_list[int(label)] = coords # label=0 is not a canal. We delete it later.
-            propagated_to = prop_to_neighbours(coords, rasterized_canals, dem, threshold=0.0)
+            c_to_r_list[int(label)] = coords # label=0 is not a canal. But do not delete it, otherwise everything would be corrido.
+            propagated_to = prop_to_neighbours(coords, rasterized_canals, dem, threshold=0.0) 
             for i in propagated_to:
                 matrix[int(label), i] = 1 # adjacency matrix of the directed graph
     
-
     
     matrix_csr = matrix.tocsr() # compressed row format is more efficient for later
     matrix_csr.eliminate_zeros() # happens in place. Frees disk usage.

@@ -22,7 +22,7 @@ def peel_raster(raster, catchment_mask):
         - catchment_mask: 2dim nparray of same size as raster. This is the fruit in the peeling.
     Output:
         - peeling_mask: boolean nparray. Tells where the peeling is.
-        - peeling_values: nparray. Values of the peeling mask in the peeling.
+
     """
     # catchment mask boundaries by convolution
     conv_double = np.array([[0,1,1,1,0],
@@ -35,9 +35,9 @@ def peel_raster(raster, catchment_mask):
     peeling_mask[bound_double[2:-2,2:-2]==0] = False; peeling_mask[bound_double[2:-2,2:-2]==20] = False
     
     peeling_mask = (raster*peeling_mask) > 0
-    peeling_values = raster * peeling_mask
+
     
-    return peeling_mask, peeling_values
+    return peeling_mask
 
 
 # NEW 23.11. ONE STEP OR MOVEMENT IN THE SIMULATED ANNEALING.
@@ -148,11 +148,7 @@ def print_time_in_mins(time):
     else:
         print "Time spent: ", time, "seconds"
         
-def read_DEM(filename):
-    with rasterio.open(filename) as raster:
-        array = raster.read()
-        return array[0]
-    
+   
 def place_dams(originalWT, srfc, block_height, dams_to_add, CNM):
     """ Takes original water level in canals and list of nodes where to put blocks. Returns updated water level in canals.
     

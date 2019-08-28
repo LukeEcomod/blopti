@@ -9,9 +9,8 @@ import time
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-import scipy.sparse as sparse
 
-import preprocess_data,  utilities, hydro, hydro_steadystate, hydro_utils
+import preprocess_data,  utilities, hydro_steadystate, hydro_utils
 
 
 plt.close("all")
@@ -26,19 +25,17 @@ time0 = time.time()
 Read and preprocess data
 """
 retrieve_canalarr_from_pickled = False
-preprocessed_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\preprocess"
-datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Canal_Block_Data\GIS_files\Stratification_layers"
-dem_rst_fn = preprocessed_datafolder + r"\dem_filled_and_interpolated.tif"
+preprocessed_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Data\corrected_vs_published"
+dem_rst_fn = preprocessed_datafolder + r"\lidar_100_resampled_interp.tif"
+can_rst_fn = preprocessed_datafolder + r"\canal_clipped_resampled_2.tif"
+peat_type_rst_fn = preprocessed_datafolder + r"\Landcover_clipped.tif"
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
-    datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Canal_Block_Data\GIS_files\Stratification_layers"
-    can_rst_fn = r"\can_rst_clipped.tif"
-    CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=preprocessed_datafolder+can_rst_fn,
-                                                                dem_rst_fn=dem_rst_fn)
+    CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=can_rst_fn, dem_rst_fn=dem_rst_fn)
 
 elif retrieve_canalarr_from_pickled==True:
-    pickle_folder = r"C:\Users\L1817\ForestCarbon"
-    pickled_canal_array_fn = r'\50x50_DEM_and_canals.pkl'
+    pickle_folder = r"C:\Users\L1817\Winrock"
+    pickled_canal_array_fn = r'\DEM_and_canals.pkl'
     with open(pickle_folder + pickled_canal_array_fn) as f:
         CNM, cr, c_to_r_list = pickle.load(f)
     print "Canal adjacency matrix and raster loaded from pickled."
@@ -46,34 +43,29 @@ elif retrieve_canalarr_from_pickled==True:
 else:
     print "Canal adjacency matrix and raster loaded from memory."
 
-dem = utilities.read_DEM(dem_rst_fn)
+_ , dem, peat_type_mask = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn)
 
-# Eliminate disconnected regions
-#dem[555:580,5:45]=dem[0,0]
-#dem[555:570,80:110] = dem[0,0] # dem[0,0] is NoData Value
-print("DEM read from file")
+print("rasters read and preprocessed from file")
 
 # catchment mask
 catchment_mask = np.ones(shape=dem.shape, dtype=bool)
-catchment_mask[np.where(dem==-99999.0)] = False # -99999.0 is current value of dem for nodata points.
+catchment_mask[np.where(dem<-10)] = False # -99999.0 is current value of dem for nodata points.
 
-# peel the dem
-boundary_mask, boundary_dirichlet = utilities.peel_raster(dem, catchment_mask)
+# peel the dem. Only when dem is not surrounded by water
+#boundary_mask = utilities.peel_raster(dem, catchment_mask)
 
 ## after peeling, catchment_mask should only be the fruit:
 #catchment_mask_unpeeled =  catchment_mask[:]
 #catchment_mask[boundary_mask] = False
 
 # soil types and soil physical properties:
-peat_type_mask_raw = utilities.read_DEM(r"Canal_Block_Data/GIS_files/Stratification_layers/MoEF_lc_reclas.tif")
-
-# Pad a couple of columns and rows to match dem
-peat_type_mask = np.ones(shape=(peat_type_mask_raw.shape[0]+2, peat_type_mask_raw.shape[1]+1)) * 255 
-peat_type_mask[2:,1:] = peat_type_mask_raw 
-
 
 peat_type_mask = peat_type_mask * catchment_mask
-peat_type_mask[peat_type_mask == 255] = 5 # Fill nodata values with something
+
+# Pad a couple of columns and rows to match dem. Only with older Winrock dataset. Eliminate in the future.
+#peat_type_mask = np.ones(shape=(peat_type_mask_raw.shape[0]+2, peat_type_mask_raw.shape[1]+1)) * 255 
+#peat_type_mask[2:,1:] = peat_type_mask_raw 
+#peat_type_mask[peat_type_mask == 255] = 5 # Fill nodata values with something
 
 h_to_tra_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
 #soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
@@ -103,7 +95,6 @@ Initial configuration of blocks in canals
 """
 iDamLocation = np.random.randint(0,n_canals,n_blocks).tolist() # Generate random kvector
 iWTcanlist = utilities.place_dams(oWTcanlist, srfcanlist, block_height, iDamLocation, CNM)
-
 
 
 
@@ -171,15 +162,18 @@ Hinitial = ele + hini #initial h (gwl) in the compartment.
 #depth = np.ones(shape=Hinitial.shape) # elevation of the impermeable bottom from comon ref. point
 
 wt_canal_arr = np.zeros((ny,nx)) # (nx,ny) array with wt canal height in corresponding nodes
+owt_canal_arr = np.zeros((ny,nx)) # checking purposes
 for canaln, coords in enumerate(c_to_r_list):
     if canaln == 0: 
         continue # because c_to_r_list begins at 1
     wt_canal_arr[coords] = wt_canals[canaln] 
+    owt_canal_arr[coords] = oWTcanlist[canaln]
     Hinitial[coords] = wt_canals[canaln]
 
-dry_peat_volume, wt = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, boundary_mask, wt_canal_arr,
+
+dry_peat_volume, wt = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
                                                   peat_type_mask=peat_type_mask, httd=h_to_tra_dict, tra_to_cut=tra_to_cut,
-                                                  diri_bc=diri_bc, neumann_bc = None, plotOpt=True, remove_ponding_water=True)
+                                                  diri_bc=0.9, neumann_bc = None, plotOpt=False, remove_ponding_water=True)
 
 # Old and bad hydrology computation. Remove after finished with the checks
 #dry_peat_volume = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
