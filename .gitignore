@@ -4,3 +4,5 @@ reports/
 output/
 preprocess/
 rubbish.py
+data/
+batch*
