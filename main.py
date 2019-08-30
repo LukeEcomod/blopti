@@ -25,7 +25,7 @@ time0 = time.time()
 Read and preprocess data
 """
 retrieve_canalarr_from_pickled = False
-preprocessed_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Data\corrected_vs_published"
+preprocessed_datafolder = r"data"
 dem_rst_fn = preprocessed_datafolder + r"\lidar_100_resampled_interp.tif"
 can_rst_fn = preprocessed_datafolder + r"\canal_clipped_resampled_2.tif"
 peat_type_rst_fn = preprocessed_datafolder + r"\Landcover_clipped.tif"
@@ -43,7 +43,7 @@ elif retrieve_canalarr_from_pickled==True:
 else:
     print "Canal adjacency matrix and raster loaded from memory."
 
-_ , dem, peat_type_mask = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn)
+_ , dem, peat_type_arr = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn)
 
 print("rasters read and preprocessed from file")
 
@@ -52,15 +52,15 @@ catchment_mask = np.ones(shape=dem.shape, dtype=bool)
 catchment_mask[np.where(dem<-10)] = False # -99999.0 is current value of dem for nodata points.
 
 # peel the dem. Only when dem is not surrounded by water
-#boundary_mask = utilities.peel_raster(dem, catchment_mask)
+boundary_mask = utilities.peel_raster(dem, catchment_mask)
+ 
 
-## after peeling, catchment_mask should only be the fruit:
-#catchment_mask_unpeeled =  catchment_mask[:]
-#catchment_mask[boundary_mask] = False
+# after peeling, catchment_mask should only be the fruit:
+catchment_mask[boundary_mask] = False
 
 # soil types and soil physical properties:
 
-peat_type_mask = peat_type_mask * catchment_mask
+peat_type_mask = peat_type_arr * catchment_mask
 
 # Pad a couple of columns and rows to match dem. Only with older Winrock dataset. Eliminate in the future.
 #peat_type_mask = np.ones(shape=(peat_type_mask_raw.shape[0]+2, peat_type_mask_raw.shape[1]+1)) * 255 
@@ -146,6 +146,8 @@ diri_bc = 1.2 # ele-phi in meters
 
 hini = - 0.9 # initial wt wrt surface elevation in meters.
 
+boundary_arr = boundary_mask * (dem - diri_bc) # constant Dirichlet value in the boundaries
+
 # Clean dem... REVIEW
 #dem[dem==-9999] = np.nan
 #x = np.arange(0, nx)
@@ -171,9 +173,10 @@ for canaln, coords in enumerate(c_to_r_list):
     Hinitial[coords] = wt_canals[canaln]
 
 
-dry_peat_volume, wt = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
+dry_peat_volume, wt = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, boundary_arr,
                                                   peat_type_mask=peat_type_mask, httd=h_to_tra_dict, tra_to_cut=tra_to_cut,
-                                                  diri_bc=0.9, neumann_bc = None, plotOpt=False, remove_ponding_water=True)
+                                                  diri_bc=0.9, neumann_bc = None, plotOpt=True, remove_ponding_water=True)
+
 
 # Old and bad hydrology computation. Remove after finished with the checks
 #dry_peat_volume = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,

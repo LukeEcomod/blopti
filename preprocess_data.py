@@ -33,6 +33,8 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn):
     
     # control nodata values
     peat_type_arr[peat_type_arr < 0] = -1
+    # fill some nodata values to get same size as dem
+    peat_type_arr[(np.where(dem>0.1) or np.where(peat_type_arr <0))] = 1.
     
     # Eliminate rows and columns full of noData values.
     # upper 5 rows, lower 5 rows, right 10 rows
@@ -44,7 +46,7 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn):
     
 
 # Build the adjacency matrix up
-def prop_to_neighbours(pixel_coords, rasterized_canals, dem, threshold=0.0):
+def _prop_to_neighbours(pixel_coords, rasterized_canals, dem, threshold=0.0):
     """Given a pixel where a canals exists, return list of canals that it would propagate to.
     Info taken for allowing propagation: DEM height.
     Threshold gives strictness of the propagation condition: if 0, then only strictly increasing water tables are propagated.
@@ -99,10 +101,10 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
 
     c_to_r_list = [0] * n_canals
     for coords, label in np.ndenumerate(rasterized_canals):
-        print(float(coords[0])/float(dem.shape[0])*100.0, " per cent of the reading completed" ) 
+#        print(float(coords[0])/float(dem.shape[0])*100.0, " per cent of the reading completed" ) 
         if rasterized_canals[coords] > 0: # if coords correspond to a canal.
             c_to_r_list[int(label)] = coords # label=0 is not a canal. But do not delete it, otherwise everything would be corrido.
-            propagated_to = prop_to_neighbours(coords, rasterized_canals, dem, threshold=0.0) 
+            propagated_to = _prop_to_neighbours(coords, rasterized_canals, dem, threshold=0.0) 
             for i in propagated_to:
                 matrix[int(label), i] = 1 # adjacency matrix of the directed graph
     
