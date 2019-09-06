@@ -70,12 +70,14 @@ peat_type_mask = peat_type_arr * catchment_mask
 h_to_tra_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
 #soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
 
-BOTTOM_ELE = -43.0 # meters with respect to sea level. Or at least to same common ref. point as the dem. Can be negative!
-#peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE - dem
+BOTTOM_ELE = -6.0 # meters with respect to dem surface. Should be negative!
 peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE
 peat_bottom_elevation = peat_bottom_elevation*catchment_mask
 tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask,
                                            gwt=peat_bottom_elevation, h_to_tra_dict=h_to_tra_dict)
+
+#tra_to_cut = np.ones(shape=tra_to_cut.shape) * 0.0001
+
 
 
 srfcanlist =[dem[coords] for coords in c_to_r_list]
@@ -142,9 +144,10 @@ wt_canals = iWTcanlist
 ny, nx = dem.shape
 dx = 1.; dy = 1. # metres per pixel  
 dt = 1. # timestep, in days
-diri_bc = 1.2 # ele-phi in meters
+diri_bc = 0.0
 
-hini = - 0.9 # initial wt wrt surface elevation in meters.
+
+hini = - 0.0 # initial wt wrt surface elevation in meters.
 
 boundary_arr = boundary_mask * (dem - diri_bc) # constant Dirichlet value in the boundaries
 
@@ -173,9 +176,9 @@ for canaln, coords in enumerate(c_to_r_list):
     Hinitial[coords] = wt_canals[canaln]
 
 
-dry_peat_volume, wt = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, boundary_arr,
+dry_peat_volume, wt, dneg = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, boundary_arr,
                                                   peat_type_mask=peat_type_mask, httd=h_to_tra_dict, tra_to_cut=tra_to_cut,
-                                                  diri_bc=0.9, neumann_bc = None, plotOpt=True, remove_ponding_water=True)
+                                                  diri_bc=diri_bc, neumann_bc = None, plotOpt=True, remove_ponding_water=True)
 
 
 # Old and bad hydrology computation. Remove after finished with the checks

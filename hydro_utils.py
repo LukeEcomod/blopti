@@ -129,7 +129,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         d depth of layer midpoint
         dz layer thickness
         pF van Genuchten water retention parameters: ThetaS, ThetaR, alfa, n
-        Ksat saturated hydraulic conductivity in m s-1
+        Ksat saturated hydraulic conductivity in m s-1. K in m/day.
         direction: positive or negative downwards
     """    
     #-------Parameters ---------------------
@@ -155,7 +155,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         stoToGwl =interp1d(np.array(stoT), np.array(gwlT), fill_value='extrapolate')
         cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT)
         cc[cc<0.2]=0.2
-        C = interp1d(np.array(gwlT), cc, fill_value='extrapolate')  #storage coefficient function      
+        C = interp1d(np.array(gwlT), cc, fill_value='extrapolate')  #storage coefficient function   
         #C = UnivariateSpline(np.array(gwlT), cc, s=10)                    
         #C=interS(np.array(gwlT), cc, k=5)
 
@@ -163,7 +163,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
     #plt.plot(gwlT, cc, 'ro')
     #plt.plot(gwlT, C(gwlT), 'b-')
     #import sys; sys.exit()
-    gwlToSto = interp1d(np.array(gwlT), np.array(stoT), fill_value='extrapolate')
+    gwlToSto = interp1d(np.array(gwlT), np.array(stoT), fill_value='extrapolate') 
     stoT = list(stoT); gwlT= list(gwlT)        
     stoT.reverse(); gwlT.reverse()
     stoToGwl =interp1d(np.array(stoT), np.array(gwlT), fill_value='extrapolate')
@@ -171,13 +171,13 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
     del gwlT, stoT
         
     #----------Transmissivity-------------------
-    K=np.array(Ksat*86400.)   #from m/s to m/day
+    K = np.array(Ksat*86400.)   #from m/s to m/day
     tr =[sum(K[t:]*dz[t:]) for t in range(nLyrs)]        
     if direction=='positive':        
         gwlToTra = interS(z, np.array(tr))            
     else:
         z= list(z);  z.reverse(); tr.reverse()
-        gwlToTra = interS(-np.array(z), np.array(tr))                    
+        gwlToTra = interS(-np.array(z), np.array(tr), k=3, ext='const') # returns limiting value outside interpolation domain 
     del tr
     return gwlToSto, stoToGwl, gwlToTra, C
 
@@ -189,15 +189,15 @@ def peat_map_interp_functions():
     """
     # Soil parameters
     spara ={
-    'gen':{'nLyrs':400, 'dzLyr': 0.5}, # General soil parameters, common to all soil types
+    'gen':{'nLyrs':400, 'dzLyr': 0.05}, # General soil parameters, common to all soil types
     
     'Water':{'ref': 1, # reference number that appears on the peat type map
-            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':40.0,
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
             'peat type top':'L', 'peat type bottom':['S']},
     
     'Forest':{'ref': 2, # reference number that appears on the peat type map
-            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':40.0,
             'peat type top':'L', 'peat type bottom':['S']},
     
@@ -218,12 +218,12 @@ def peat_map_interp_functions():
              
     'Wetland':{'ref': 6, # reference number that appears on the peat type map
         'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-        'vonP bottom': 10, 'Kadjust':4.0,
+        'vonP bottom': 10, 'Kadjust':40.0,
         'peat type top':'L', 'peat type bottom':['S']},
                
     'Developed':{'ref': 7, # reference number that appears on the peat type map
         'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-        'vonP bottom': 10, 'Kadjust':4.0,
+        'vonP bottom': 10, 'Kadjust':40.0,
         'peat type top':'L', 'peat type bottom':['S']},
     }
     
