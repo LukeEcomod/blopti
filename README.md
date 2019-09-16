@@ -1,4 +1,4 @@
-# Damn Dams Winrock
+# Damn Dams
 Canal blocking computation for Winrock.
 
 ## Installation
