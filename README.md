@@ -2,7 +2,7 @@
 Canal blocking computation for Winrock.
 
 ## Installation
-1. Creation of a new environment within Conda with minimal packages:
+1. Create a new environment within Conda with minimal packages:
 
 ```
 conda create -n [name of environment] -c conda-forge python=2.7 numpy scipy rasterio fipy matplotlib pandas
