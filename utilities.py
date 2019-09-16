@@ -7,8 +7,6 @@ Created on Thu Jul 26 14:22:00 2018
 
 import numpy as np
 import copy
-import matplotlib.pyplot as plt
-import rasterio
 import random
 import scipy.signal
 
@@ -34,9 +32,8 @@ def peel_raster(raster, catchment_mask):
     peeling_mask = np.ones(shape=catchment_mask.shape, dtype=bool)
     peeling_mask[bound_double[2:-2,2:-2]==0] = False; peeling_mask[bound_double[2:-2,2:-2]==20] = False
     
-    peeling_mask = (raster*peeling_mask) > 0
+    peeling_mask = (catchment_mask*peeling_mask) > 0
 
-    
     return peeling_mask
 
 

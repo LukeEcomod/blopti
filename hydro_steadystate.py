@@ -29,7 +29,7 @@ def plot_2D_raster(raster, title, colormap='pink'):
     """
     plt.figure()
     plt.title(title)
-    plt.imshow(raster, cmap=colormap, interpolation='nearest')
+    plt.imshow(raster, cmap=colormap, interpolation='nearest', animated='True')
     plt.colorbar()
     
     return 0
@@ -63,8 +63,8 @@ def plot_line_of_peat(raster, y_value, title, nx, ny, label):
         
     
 
-def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, boundary_arr,
-              peat_type_mask, httd, tra_to_cut,
+def hydrology(nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, wt_canal_arr, boundary_arr,
+              peat_type_mask, httd, tra_to_cut, sto_to_cut,
               diri_bc=0.9, neumann_bc = None, plotOpt=False, remove_ponding_water=True):
     """
     INPUT:
@@ -77,18 +77,16 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, b
         - neumann_bc: None or float. If None, Neumann BC will not be implemented. If float, this is the value of grad phi.
     """
     dneg = []
-    ini_cond = 1.0 # Make it a function parameter!
    
     ele[~catchment_mask] = 0.
     ele = ele.flatten()
-    H = Hinitial.flatten()
+    phi_initial = phi_initial.flatten()
 
-    if len(ele)!= nx*ny or len(H) != nx*ny:
-        raise ValueError("ele, depth or Hinitial are not of dim nx*ny")
+    if len(ele)!= nx*ny or len(phi_initial) != nx*ny:
+        raise ValueError("ele or Hinitial are not of dim nx*ny")
     
-   
     mesh = fp.Grid2D(dx=dx, dy=dy, nx=nx, ny=ny)
-    phi = fp.CellVariable(name='computed H', mesh=mesh,value=ele-ini_cond, hasOld=True) #response variable H in meters above reference level               
+    phi = fp.CellVariable(name='computed H', mesh=mesh,value=phi_initial, hasOld=True) #response variable H in meters above reference level               
     
     if diri_bc != None and neumann_bc == None:
         phi.constrain(diri_bc, mesh.exteriorFaces)
@@ -122,32 +120,42 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, b
         # Some inputs are in fipy CellVariable type
         gwt = phi.value*cmask.value - ele
         
-        d = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=gwt, h_to_tra_dict=httd) - tra_to_cut
+        d = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=gwt, h_to_tra_and_C_dict=httd) - tra_to_cut
 
         # d <0 means tra_to_cut is greater than the other transmissivity, which in turn means that
         # phi is below the impermeable bottom. We allow phi to have those values, but
         # the transmissivity is in those points is equal to zero (as if phi was exactly at the impermeable bottom).
 #        d[d<0] = 1e-5 
-        global dcell
+        
         dcell = fp.CellVariable(mesh=mesh, value=d) # diffusion coefficient, transmissivity. As a cell variable.
         dface = fp.FaceVariable(mesh=mesh, value= dcell.arithmeticFaceValue.value) # THe correct Face variable.
         
         return dface.value
     
+    def C_value(phi, ele, sto_to_cut, cmask, drmask_not):
+        # Some inputs are in fipy CellVariable type
+        gwt = phi.value*cmask.value - ele
+        
+        c = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask, gwt=gwt, h_to_tra_and_C_dict=httd) - sto_to_cut
+        
+        ccell = fp.CellVariable(mesh=mesh, value=c) # diffusion coefficient, transmissivity. As a cell variable.        
+        return ccell.value
+
     D = fp.FaceVariable(mesh=mesh, value=D_value(phi, ele, tra_to_cut, cmask, drmask_not)) # THe correct Face variable.
+    C = fp.CellVariable(mesh=mesh, value=C_value(phi, ele, sto_to_cut, cmask, drmask_not)) # differential water capacity
         
     largeValue=1e20                                                     # value needed in implicit source term to apply internal boundaries
     
     
     if plotOpt:
-        plot_2D_raster(((hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=(phi.value - ele), h_to_tra_dict=httd) - tra_to_cut)*cmask.value *drmask_not.value ).reshape(ny,nx), title="D in the beginning")
+        plot_2D_raster(((hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=(phi.value - ele), h_to_tra_and_C_dict=httd) - tra_to_cut)*cmask.value *drmask_not.value ).reshape(ny,nx), title="D in the beginning")
         plot_2D_raster(phi.value.reshape(ny,nx), title="phi initial state")
         plot_2D_raster((ele.reshape(ny,nx) - wt_canal_arr) * dr * catchment_mask, title="canal water level", colormap='viridis')
         plot_2D_raster(ele.reshape(ny,nx), title="DEM")
         plot_2D_raster((ele-phi.value).reshape(ny,nx), title="elevation - phi Initial state")
     plotOptCrossSection = True
     if plotOptCrossSection:
-        y_value=400
+        y_value=170
         print "first cross-section plot"
         ele_with_can = copy.copy(ele).reshape(ny,nx)
         ele_with_can[wt_canal_arr > 0] = wt_canal_arr[wt_canal_arr > 0]
@@ -159,8 +167,8 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, b
     if diri_bc != None:
 #        diri_boundary = fp.CellVariable(mesh=mesh, value= np.ravel(diri_boundary_value(boundary_mask, ele2d, diri_bc)))
         
-        eq = 0. == (fp.DiffusionTerm(coeff=D)
-                + source*cmask*drmask_not
+        eq = 0. == (fp.DiffusionTerm(coeff=D) 
+                + source*cmask*drmask_not 
                 - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*np.ravel(boundary_arr)
                 - fp.ImplicitSourceTerm(drmask*largeValue)    + drmask*largeValue*(np.ravel(wt_canal_arr))
 #                - fp.ImplicitSourceTerm(bmask_not*largeValue) + bmask_not*largeValue*(boundary_arr)
@@ -179,28 +187,38 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, b
     
     #********************************************************
                                                                   
-    d=0   # day counter                                                                  
+    d=0   # day counter
+    timeStep = 10.                                                            
     days=10 # outmost loop. "timesteps" in fipy manual. Needed due to non-linearity.
     max_sweeps = 1 # inner loop.
     ET = 0. # constant evapotranspoiration mm/day
     P = 6.0 # constant precipitation
 
+#    source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m. For steadystate!
     source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m. For steadystate!
 
     avg_wt_over_time = []
     avg_D_over_time = []
     
-    eq.solve(var=phi)
+    
                                                              
     #********Finite volume computation******************
     for d in range(days):
-    
+        if d>2:
+            timeStep = 5.
+        if d > 20:
+            timeStep = 3.
+        if d > 50:
+            timeStep = 2.
+        if d>100:
+            timeStep = 1.
+        print "timeStep = ", timeStep
         print d
         
         plotOptCrossSection = True
         if plotOptCrossSection:
             print "one more cross-section plot"
-            plot_line_of_peat(phi.value.reshape(ny,nx), y_value=400, title="cross-section",  nx=nx, ny=ny, label=d)
+            plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section",  nx=nx, ny=ny, label=d)
 
         
         res = 0.0
@@ -208,13 +226,14 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, b
         phi.updateOld() 
      
         D.setValue(D_value(phi, ele, tra_to_cut, cmask, drmask_not))
+        C.setValue(C_value(phi, ele, tra_to_cut, cmask, drmask_not))
 #        D.setValue(100.)
 #            CC.setValue(C(phi.value-ele))    
             
         for r in range(max_sweeps):
             resOld=res
                 
-            res = eq.sweep(var=phi) # solve linearization of PDE
+            res = eq.sweep(var=phi, dt=timeStep) # solve linearization of PDE
 
 
             print "sum of Ds: ", np.sum(D.value)/1e8 
@@ -225,19 +244,18 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, b
             
             if abs(res - resOld) < 1e-7: break # it has reached to the solution of the linear system
         
-        if remove_ponding_water:                 
-            s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water. This also removes phi in those masked values (for the plot only)
-            phi.setValue(s)                                                # set new values for water table
-        
-        
         if (D.value<0.).any():
                 print "Some value in D is negative!"
-                dneg.append((np.where(dcell.value.reshape(ny,nx)<0.), dcell.value.reshape(ny,nx)[np.where(dcell.value.reshape(ny,nx)<0.)]))
 
         # For some plots
         avg_wt_over_time.append(np.average(phi.value-ele))
         avg_D_over_time.append(np.average(D.value))
-            
+        
+
+        if remove_ponding_water:                 
+            s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water. This also removes phi in those masked values (for the plot only)
+            phi.setValue(s)                                                # set new values for water table
+    
     
     """ Volume of dry peat calc."""
     peat_vol_weights = utilities.PeatV_weight_calc(np.array(~dr*catchment_mask,dtype=int))
@@ -245,7 +263,7 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, b
 #    print "Dry peat volume = ", dry_peat_volume
     
     if plotOpt:
-        plot_2D_raster(((hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=(phi.value - ele), h_to_tra_dict=httd) - tra_to_cut)*cmask.value *drmask_not.value ).reshape(ny,nx), title="D in the end")
+        plot_2D_raster(((hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=(phi.value - ele), h_to_tra_and_C_dict=httd) - tra_to_cut)*cmask.value *drmask_not.value ).reshape(ny,nx), title="D in the end")
         plot_2D_raster((ele-phi.value).reshape(ny,nx), title="elevation - phi Final state")
         plot_2D_raster((phi.value).reshape(ny,nx), title="phi Final state")
         plot_2D_raster((ele).reshape(ny,nx), title="elevation Final state")
@@ -266,7 +284,7 @@ def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, b
     plt.show()
         
 #    change_in_canals = (ele-phi.value).reshape(ny,nx)*(drmask.value.reshape(ny,nx)) - ((ele-H)*drmask.value).reshape(ny,nx)
-    resultingwt = (ele-phi.value).reshape(ny,nx)
+    resulting_phi = phi.value.reshape(ny,nx)
 
 
-    return dry_peat_volume, resultingwt, dneg
+    return dry_peat_volume, resulting_phi, dneg

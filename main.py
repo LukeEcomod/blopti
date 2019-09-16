@@ -9,8 +9,9 @@ import time
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
+#import argparse
 
-import preprocess_data,  utilities, hydro_steadystate, hydro_utils
+import preprocess_data,  utilities, hydro, hydro_utils
 
 
 plt.close("all")
@@ -20,6 +21,21 @@ Read general help on main.README.txt
 """
 
 time0 = time.time()
+
+np.random.seed(3)
+
+"""
+Parse command-line arguments
+"""
+#parser = argparse.ArgumentParser(description='Run the general code without any optimization algorithm.')
+#
+#parser.add_argument('-n','--niter', default=10, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
+#parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
+#args = parser.parse_args()
+#
+#days = args.niter # outtermost loop in fipy. 'timesteps' in fipy manual.
+#nblocks = args.nblocks
+
 
 """
 Read and preprocess data
@@ -42,7 +58,7 @@ elif retrieve_canalarr_from_pickled==True:
     
 else:
     print "Canal adjacency matrix and raster loaded from memory."
-
+    
 _ , dem, peat_type_arr = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn)
 
 print("rasters read and preprocessed from file")
@@ -59,26 +75,20 @@ boundary_mask = utilities.peel_raster(dem, catchment_mask)
 catchment_mask[boundary_mask] = False
 
 # soil types and soil physical properties:
-
 peat_type_mask = peat_type_arr * catchment_mask
 
-# Pad a couple of columns and rows to match dem. Only with older Winrock dataset. Eliminate in the future.
-#peat_type_mask = np.ones(shape=(peat_type_mask_raw.shape[0]+2, peat_type_mask_raw.shape[1]+1)) * 255 
-#peat_type_mask[2:,1:] = peat_type_mask_raw 
-#peat_type_mask[peat_type_mask == 255] = 5 # Fill nodata values with something
 
-h_to_tra_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
+
+h_to_tra_and_C_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
 #soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
 
 BOTTOM_ELE = -6.0 # meters with respect to dem surface. Should be negative!
 peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE
 peat_bottom_elevation = peat_bottom_elevation*catchment_mask
 tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask,
-                                           gwt=peat_bottom_elevation, h_to_tra_dict=h_to_tra_dict)
-
-#tra_to_cut = np.ones(shape=tra_to_cut.shape) * 0.0001
-
-
+                                           gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
+sto_to_cut = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask,
+                                           gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
 
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
@@ -101,7 +111,7 @@ iWTcanlist = utilities.place_dams(oWTcanlist, srfcanlist, block_height, iDamLoca
 
 
 """
-Metropolis/Simulated Annealing. Maybe use external function?
+Metropolis/Simulated Annealing.
 """
 # This would be one of the movements of the SimulatedAnnealing
 #wt_canals = utilities.switch_one_dam(oWTcanlist, srfcanlist, iWTcanlist, block_height, iDamLocation, n_canals, CNM)
@@ -118,23 +128,8 @@ Metropolis/Simulated Annealing. Maybe use external function?
 #                                               MCsteps=MCsteps, Tini=Tini, Tfin=Tfin, Tstep=Tstep,
 #                                               T_cooling=True, CNM=CNM, save_to_file=True, save_to_file_freq=0.001)
 
-
-
-"""
-Plots
-    - Energy vs Temperature
-    - WT in canals
-"""
-#MCplot = False
-#if MCplot:
-#    plottingARR.PlotFromData(MCfile, Tini, Tfin, MCsteps, n_nodes)
-#
-#WTcanals_plot = False
-#if WTcanals_plot:
-#    plottingARR.PlotWT(n_nodes, oWTcanArr, WT0canal, srfcanlist, bpos0, ktndict, titlename=1)
- 
-
 wt_canals = iWTcanlist
+
 
 """
 #########################################
@@ -151,20 +146,20 @@ hini = - 0.0 # initial wt wrt surface elevation in meters.
 
 boundary_arr = boundary_mask * (dem - diri_bc) # constant Dirichlet value in the boundaries
 
-# Clean dem... REVIEW
-#dem[dem==-9999] = np.nan
-#x = np.arange(0, nx)
-#y = np.arange(0, ny)
-#dem = np.ma.masked_invalid(dem)
-#xx, yy = np.meshgrid(x, y)
-#x1 = xx[~dem.mask] # get only the valid values
-#y1 = yy[~dem.mask]
-#clean_dem = dem[~dem.mask] 
-
 ele = dem
 
-Hinitial = ele + hini #initial h (gwl) in the compartment.
-#depth = np.ones(shape=Hinitial.shape) # elevation of the impermeable bottom from comon ref. point
+# Get a pickled phi solution (not ele-phi!) computed before without blocks, independently,
+# and use it as initial condition to improve convergence time of the new solution
+retrieve_transient_phi_sol_from_pickled = True
+if retrieve_transient_phi_sol_from_pickled:
+    with open(r"pickled\transient_phi_sol.pkl", 'r') as f:
+        phi_ini = pickle.load(f)
+    print "transient phi solution loaded as initial condition"
+    
+else:
+    phi_ini = ele + hini #initial h (gwl) in the compartment.
+    
+    
 
 wt_canal_arr = np.zeros((ny,nx)) # (nx,ny) array with wt canal height in corresponding nodes
 owt_canal_arr = np.zeros((ny,nx)) # checking purposes
@@ -173,18 +168,11 @@ for canaln, coords in enumerate(c_to_r_list):
         continue # because c_to_r_list begins at 1
     wt_canal_arr[coords] = wt_canals[canaln] 
     owt_canal_arr[coords] = oWTcanlist[canaln]
-    Hinitial[coords] = wt_canals[canaln]
 
 
-dry_peat_volume, wt, dneg = hydro_steadystate.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, boundary_arr,
-                                                  peat_type_mask=peat_type_mask, httd=h_to_tra_dict, tra_to_cut=tra_to_cut,
+dry_peat_volume, wt, dneg = hydro.hydrology('steadystate', nx, ny, dx, dy, dt, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
+                                                  peat_type_mask=peat_type_mask, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
                                                   diri_bc=diri_bc, neumann_bc = None, plotOpt=True, remove_ponding_water=True)
-
-
-# Old and bad hydrology computation. Remove after finished with the checks
-#dry_peat_volume = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr,
-#                                  peat_type_mask=peat_type_mask, httd=h_to_tra_dict, tra_to_cut=tra_to_cut,
-#                                  value_for_masked=0.9, diri_bc=None, neumann_bc = 0.0, plotOpt=True)
 
 
 """

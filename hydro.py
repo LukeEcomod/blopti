@@ -1,5 +1,12 @@
 # -*- coding: utf-8 -*-
 """
+Created on Mon Jun  3 14:42:36 2019
+
+@author: L1817
+"""
+
+# -*- coding: utf-8 -*-
+"""
 Created on Thu Nov 22 15:34:44 2018
 
 @author: L1817
@@ -7,306 +14,294 @@ Created on Thu Nov 22 15:34:44 2018
 import numpy as np
 import fipy as fp
 import matplotlib.pyplot as plt
-import datetime
+import copy
+
 import hydro_utils, utilities
 
+"""
+   SET FIPY SOLVER
+"""
 fp.solvers.DefaultSolver = fp.solvers.LinearLUSolver
 
-def hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask, wt_canal_arr, peat_type_mask, httd, tra_to_cut,
-              value_for_masked=0.0, diri_bc=None, neumann_bc = 0.0, plotOpt=False):
+def plot_2D_raster(raster, title, colormap='pink'):
+    """
+    raster must be converted to (ny, nx) form in advance. 
+    """
+    plt.figure()
+    plt.title(title)
+    plt.imshow(raster, cmap=colormap, interpolation='nearest', animated='True')
+    plt.colorbar()
+    
+    return 0
+
+def plot_raster_by_value(raster, title, bottom_value=None, top_value=None):
+    # No differences if unspecified bottom and top
+    if bottom_value == None:
+        bottom_value = raster.min()
+    if top_value == None:
+        top_value = raster.max()
+        
+    raster_discrete = np.zeros(shape=raster.shape)
+    raster_discrete = raster_discrete + np.array(raster <= bottom_value, dtype=int) * (-1)
+    raster_discrete = raster_discrete + np.array(raster >= top_value, dtype=int) * 1
+    
+    plt.figure()
+    plt.title(title)
+    plt.imshow(raster_discrete, cmap='Reds', interpolation='nearest')
+    plt.colorbar()
+
+    
+    return 0
+
+def plot_line_of_peat(raster, y_value, title, nx, ny, label):
+    plt.figure(10)
+    plt.title(title)
+    plt.plot(raster[y_value,:], label=label)
+    plt.legend()
+    
+    return 0
+        
+    
+
+def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, wt_canal_arr, boundary_arr,
+              peat_type_mask, httd, tra_to_cut, sto_to_cut, 
+              diri_bc=0.9, neumann_bc = None, plotOpt=False, remove_ponding_water=True):
     """
     INPUT:
         - ele: (nx,ny) sized NumPy array. Elevation in m above c.r.p.
         - Hinitial: (nx,ny) sized NumPy array. Initial water table in m above c.r.p.
         - catchment mask: (nx,ny) sized NumPy array. Boolean array = True where the node is inside the computation area. False if outside.
         - wt_can_arr: (nx,ny) sized NumPy array. Zero everywhere except in nodes that contain canals, where = wl of the canal.
-        - value_for_masked: float. Value of ele-phi for points outside the catchment mask.
+        - value_for_masked: DEPRECATED. IT IS NOW THE SAME AS diri_bc.
         - diri_bc: None or float. If None, Dirichlet BC will not be implemented. If float, this number will be the BC.
         - neumann_bc: None or float. If None, Neumann BC will not be implemented. If float, this is the value of grad phi.
     """
-    
-    ele = ele.flatten()
-    H = Hinitial.flatten()
-
-    if len(ele)!= nx*ny or len(H) != nx*ny:
-        raise ValueError("ele, depth or Hinitial are not of dim nx*ny")
+    dneg = []
    
-    rainFile = r'C:\Users\L1817\Dropbox\PhD\Computation\hydro to Inaki\\rainfall.csv'
-    rain = hydro_utils.getRainfall(rainFile)   #rainfall data
-    
-    # Added 19.10.2018
-    spara ={ 
-    'mesic':{
-    'nLyrs':400, 'dzLyr': 0.05,  'Kadjust':50.0,
-    'peat type':['L','L','L','L','L','L','L'], 'peat type bottom':['S'],
-    'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8], 'vonP bottom': 10 },
-    } 
-    
-    spara = spara['mesic']
-    nLyrs = spara['nLyrs']                                                      # number of soil layers
-    dz = np.ones(nLyrs)*spara['dzLyr']                                          # thickness of layers, m
-    z = np.cumsum(dz)-dz/2.                                                     # depth of the layer center point, m 
-    lenvp=len(spara['vonP top'])    
-    vonP = np.ones(nLyrs)*spara['vonP bottom']; vonP[0:lenvp] = spara['vonP top']  # degree of  decomposition, von Post scale
-    ptype = spara['peat type bottom']*spara['nLyrs']
-    lenpt = len(spara['peat type']); ptype[0:lenpt] = spara['peat type']    
-    pF, Ksat = hydro_utils.peat_hydrol_properties(vonP, var='H', ptype=ptype)  # peat hydraulic properties after Päivänen 1973    
-    hToSto, stoToGwl, hToTra, C = hydro_utils.CWTr(nLyrs, z, dz, pF, Ksat*spara['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
-    
-    #        print hToTra([-5.,0.1,1.,5.,10.])
-    #        import sys; sys.exit()
-    #        #********* some checks
-    #        if not np.all((ele-depth)*np.ravel(c))>=0):
-    #            raise ValueError('depth cannot be greater than elevation!')
-    #        if not np.all((H-depth)*np.ravel(c))>=0):
-    #            raise ValueError('depth cannot be greater than H!')
-    
+    ele[~catchment_mask] = 0.
+    ele = ele.flatten()
+    phi_initial = phi_initial.flatten()
+
+    if len(ele)!= nx*ny or len(phi_initial) != nx*ny:
+        raise ValueError("ele or Hinitial are not of dim nx*ny")
     
     mesh = fp.Grid2D(dx=dx, dy=dy, nx=nx, ny=ny)
-    phi=fp.CellVariable(name='computed H', mesh=mesh,value=1., hasOld=True) #response variable H in meters above reference level               
-    
-    #*******omit areas outside the catchment. catchment_mask is input
-    cmask = fp.CellVariable(mesh=mesh, value=np.ravel(catchment_mask))
-    cmask_not = fp.CellVariable(mesh=mesh, value=np.array(~ cmask.value, dtype = bool))
-        #        cmask = fp.CellVariable(mesh=mesh, value=np.array(cmask.value, dtype = int))
-    # *** drain mask or canal mask
-    dr = np.array(wt_canal_arr, dtype=bool)
-    drmask=fp.CellVariable(mesh=mesh, value=np.ravel(dr))
-    drmask_not = fp.CellVariable(mesh=mesh, value= np.array(~ drmask.value, dtype = int))      # Complementary of the drains mask, but with ints {0,1}
-    
-    # mask away unnecesary stuff
-    phi.setValue(np.ravel(H)*cmask.value)
-    ele = ele * cmask.value
-    
-    #Added 19.10.2018
-    bottom_ele = np.ones(np.shape(ele))*14.                                # elevation of the impearmeable bottom layer, m above sea level
-    peat_depth=ele-bottom_ele
-    to_cut_Tr = z[-1]-peat_depth                                           # depth of peat to be cut from the bottom of each column because of the varying peat depth
-    Tr_cut = to_cut_Tr * Ksat[-1]*86400.*spara['Kadjust']*to_cut_Tr        #subtract this transmissivity from the computed to account for decreasing Tr with decreasing peat depth
+    phi = fp.CellVariable(name='computed H', mesh=mesh,value=phi_initial, hasOld=True) #response variable H in meters above reference level               
     
     if diri_bc != None and neumann_bc == None:
         phi.constrain(diri_bc, mesh.exteriorFaces)
     
     elif diri_bc == None and neumann_bc != None:
-       phi.faceGrad.constrain([-neumann_bc], mesh.facesRight)
-       phi.faceGrad.constrain([-neumann_bc], mesh.facesTop) 
-       phi.faceGrad.constrain([+neumann_bc], mesh.facesBottom)
-       phi.faceGrad.constrain([+neumann_bc], mesh.facesLeft)
-
+        phi.faceGrad.constrain(neumann_bc * mesh.faceNormals, where=mesh.exteriorFaces)
        
     else:
         raise ValueError("Cannot apply Dirichlet and Neumann boundary values at the same time. Contradictory values.")
        
     
+    #*******omit areas outside the catchment. c is input
+    cmask = fp.CellVariable(mesh=mesh, value=np.ravel(catchment_mask))
+    cmask_not = fp.CellVariable(mesh=mesh, value=np.array(~ cmask.value, dtype = int))
+    
+    # *** drain mask or canal mask
+    dr = np.array(wt_canal_arr, dtype=bool)
+    drmask=fp.CellVariable(mesh=mesh, value=np.ravel(dr))
+    drmask_not = fp.CellVariable(mesh=mesh, value= np.array(~ drmask.value, dtype = int))      # Complementary of the drains mask, but with ints {0,1}
+    
+    
+    # mask away unnecesary stuff
+#    phi.setValue(np.ravel(H)*cmask.value)
+#    ele = ele * cmask.value
+    
     source = fp.CellVariable(mesh=mesh, value = 0.)                         # cell variable for source/sink
-#    dd = fp.CellVariable(mesh=mesh, value=(hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)      # diffusion coefficient, transmissivity
-#    D = fp.FaceVariable(mesh=mesh, value = dd.arithmeticFaceValue.value)
+#    CC=fp.CellVariable(mesh=mesh, value=C(phi.value-ele))                   # differential water capacity
+
 
     def D_value(phi, ele, tra_to_cut, cmask, drmask_not):
-            # Some inputs are in fipy CellVariable type
-            gwt = phi.value - ele
-            
-            d = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=gwt, h_to_tra_dict=httd) - tra_to_cut
-            d = d *cmask.value *drmask_not.value        
-    
-            dface = fp.CellVariable(mesh=mesh, value=d) # diffusion coefficient, transmissivity. As a cell variable.
-            dface = fp.FaceVariable(mesh=mesh, value= dface.arithmeticFaceValue.value) # THe correct Face variable.
-    
-            return dface.value
+        # Some inputs are in fipy CellVariable type
+        gwt = phi.value*cmask.value - ele
+        
+        d = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=gwt, h_to_tra_and_C_dict=httd) - tra_to_cut
 
-    D = fp.FaceVariable(mesh=mesh, value= D_value(phi, ele, Tr_cut*cmask.value*drmask_not.value, cmask, drmask_not))
+        # d <0 means tra_to_cut is greater than the other transmissivity, which in turn means that
+        # phi is below the impermeable bottom. We allow phi to have those values, but
+        # the transmissivity is in those points is equal to zero (as if phi was exactly at the impermeable bottom).
+#        d[d<0] = 1e-5 
+        
+        dcell = fp.CellVariable(mesh=mesh, value=d) # diffusion coefficient, transmissivity. As a cell variable.
+        dface = fp.FaceVariable(mesh=mesh, value= dcell.arithmeticFaceValue.value) # THe correct Face variable.
+        
+        return dface.value
+    
+    def C_value(phi, ele, sto_to_cut, cmask, drmask_not):
+        # Some inputs are in fipy CellVariable type
+        gwt = phi.value*cmask.value - ele
+        
+        c = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask, gwt=gwt, h_to_tra_and_C_dict=httd) - sto_to_cut
+        
+        ccell = fp.CellVariable(mesh=mesh, value=c) # diffusion coefficient, transmissivity. As a cell variable.        
+        return ccell.value
 
-#    CC=fp.CellVariable(mesh=mesh, value=C(phi.value-ele))                   # differential water capacity
+    D = fp.FaceVariable(mesh=mesh, value=D_value(phi, ele, tra_to_cut, cmask, drmask_not)) # THe correct Face variable.
+    C = fp.CellVariable(mesh=mesh, value=C_value(phi, ele, sto_to_cut, cmask, drmask_not)) # differential water capacity
+        
+    largeValue=1e20                                                     # value needed in implicit source term to apply internal boundaries
     
     
-    
-    largeValue=1e20                                                     # variable needed in implicit source term to apply internal boundaries
-    
-
-    
-    
-
     if plotOpt:
-#        plt.figure()
-#        plt.title("Transmissivity in the beginning")
-#        plt.imshow((dd.value).reshape(ny,nx), cmap='pink'); plt.colorbar()
+        plot_2D_raster(((hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=(phi.value - ele), h_to_tra_and_C_dict=httd) - tra_to_cut)*cmask.value *drmask_not.value ).reshape(ny,nx), title="D in the beginning")
+        plot_2D_raster(phi.value.reshape(ny,nx), title="phi initial state")
+        plot_2D_raster((ele.reshape(ny,nx) - wt_canal_arr) * dr * catchment_mask, title="canal water level", colormap='viridis')
+        plot_2D_raster(ele.reshape(ny,nx), title="DEM")
+        plot_2D_raster((ele-phi.value).reshape(ny,nx), title="elevation - phi Initial state")
+    plotOptCrossSection = True
+    if plotOptCrossSection:
+        y_value=170
+        print "first cross-section plot"
+        ele_with_can = copy.copy(ele).reshape(ny,nx)
+        ele_with_can[wt_canal_arr > 0] = wt_canal_arr[wt_canal_arr > 0]
+        plot_line_of_peat(ele_with_can, y_value=y_value, title="cross-section", nx=nx, ny=ny, label="ele")
         
-#        plt.figure()
-#        plt.title("C in the beginning")
-#        plt.imshow((CC.value).reshape(ny,nx), cmap='pink', interpolation='nearest')
-        
-        plt.figure()
-        plt.title("(DEM) elevation Initial state")
-#        plt.imshow(ele.reshape(ny,nx), cmap='pink', interpolation='nearest', extent=[0,nx*dx,0,ny*dy]); plt.colorbar()
-        plt.imshow(ele.reshape(ny,nx), cmap='pink', interpolation='nearest'); plt.colorbar()
-        
-        plt.figure()
-        plt.title("elevation - phi Initial state")
-#        plt.imshow((ele-phi.value).reshape(ny,nx), cmap='pink', interpolation='nearest', extent=[0,nx*dx,0,ny*dy]); plt.colorbar()
-        plt.imshow((ele-phi.value).reshape(ny,nx), cmap='pink', interpolation='nearest'); plt.colorbar()
-        # For some later plot
+
+
+    # ********************************** PDE, STEADY STATE **********************************
+    if solve_mode == 'steadystate':
+        if diri_bc != None:
+    #        diri_boundary = fp.CellVariable(mesh=mesh, value= np.ravel(diri_boundary_value(boundary_mask, ele2d, diri_bc)))
+            
+            eq = 0. == (fp.DiffusionTerm(coeff=D) 
+                    + source*cmask*drmask_not 
+                    - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*np.ravel(boundary_arr)
+                    - fp.ImplicitSourceTerm(drmask*largeValue)    + drmask*largeValue*(np.ravel(wt_canal_arr))
+    #                - fp.ImplicitSourceTerm(bmask_not*largeValue) + bmask_not*largeValue*(boundary_arr)
+                    )
+            
+        elif neumann_bc != None: 
+            raise NotImplementedError("Neumann BC not implemented yet!") # DOESN'T WORK RIGHT NOW!
+            cmask_face = fp.FaceVariable(mesh=mesh, value=np.array(cmask.arithmeticFaceValue.value, dtype=bool))
+            D[cmask_face.value] = 0.
+            eq = 0. == (fp.DiffusionTerm(coeff=D) + source*cmask*drmask_not
+                    - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*(diri_bc)
+                    - fp.ImplicitSourceTerm(drmask*largeValue) + drmask*largeValue*(np.ravel(wt_canal_arr))
+    #                + fp.DiffusionTerm(coeff=largeValue * bmask_face)
+    #                - fp.ImplicitSourceTerm((bmask_face * largeValue *neumann_bc * mesh.faceNormals).divergence)
+                    )
     
+    elif solve_mode == 'transient':
+        if diri_bc != None:
+    #        diri_boundary = fp.CellVariable(mesh=mesh, value= np.ravel(diri_boundary_value(boundary_mask, ele2d, diri_bc)))
+            
+            eq = fp.TransientTerm(coeff=C) == (fp.DiffusionTerm(coeff=D) 
+                        + source*cmask*drmask_not 
+                        - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*np.ravel(boundary_arr)
+                        - fp.ImplicitSourceTerm(drmask*largeValue)    + drmask*largeValue*(np.ravel(wt_canal_arr))
+        #                - fp.ImplicitSourceTerm(bmask_not*largeValue) + bmask_not*largeValue*(boundary_arr)
+                        )
+        elif neumann_bc != None:
+            raise NotImplementedError("Neumann BC not implemented yet!") # DOESN'T WORK RIGHT NOW!
+        
     
-    steady_state = True
-    if not steady_state:        
-#        eq = fp.TransientTerm(coeff=CC) == (fp.DiffusionTerm(coeff=hToTra(phi.value-ele)*cmask*drmask_not) + source*cmask*drmask_not
-#                          - fp.ImplicitSourceTerm(drmask*largeValue) + drmask*largeValue*(np.ravel(wt_canal_arr))
-#                          - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*(value_for_masked)
-#                          )
-        eq = fp.TransientTerm(coeff=CC) == (fp.DiffusionTerm(coeff=hToTra(phi.value-ele)*cmask) + source*cmask
-                              - fp.ImplicitSourceTerm(drmask*largeValue) + drmask*largeValue*(np.ravel(wt_canal_arr))
-                              - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*(value_for_masked)
-                              )
-    elif steady_state:
-        eq = 0. == (fp.DiffusionTerm(coeff=D) + source*cmask*drmask_not
-                - fp.ImplicitSourceTerm(drmask*cmask_not*largeValue) + drmask*cmask_not*largeValue*(np.ravel(wt_canal_arr))
-                - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*(value_for_masked)
-                )
+                  
+    
     #********************************************************
-    yr0 = 2013; yr1 = 2013
-    P= list(np.ravel(rain[str(yr0):str(yr1)].values))            
-    ET = 3.5                                                                # constant evapotranspoiration mm/day
-    d=0                                                                     # day counter
-    days=3
-    hts = np.empty((int(len(P)/dt),ny,nx), dtype=float)
-    Nflag=False                                                             # Neumann boundary condition flag, false=Dirichlet, true=Neumann 
-    #********Finite volume computation******************
-    for p in P[0:days]:
-    #for p in P:
-        if p<3.: 
-            dt= 1./4.
-        elif p<10.: 
-            dt=1./12.
-        else:
-            dt=1./24.
-        
-        dt=1.; p=7.5   #ATTN! This is manufactured, 7 is average daily rainfall
+                                                                  
+    d=0   # day counter
+    timeStep = 10.                                                            
+    days=10 # outmost loop. "timesteps" in fipy manual. Needed due to non-linearity.
+    max_sweeps = 1 # inner loop.
+    ET = 0. # constant evapotranspoiration mm/day
+    P = 6.0 # constant precipitation
+
+#    source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m. For steadystate!
+    source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m. For steadystate!
+
+    avg_wt_over_time = []
+    avg_D_over_time = []
     
-#        print d, p, dt
+    
+                                                             
+    #********Finite volume computation******************
+    for d in range(days):
+        if d>2:
+            timeStep = 5.
+        if d > 20:
+            timeStep = 3.
+        if d > 50:
+            timeStep = 2.
+        if d>100:
+            timeStep = 1.
+        print "timeStep = ", timeStep
+        print d
         
-        for subdt in range(int(1./dt)):
-#            print subdt, np.average(phi.value-ele)
-            source.setValue((p-ET)/1000.*np.ones(ny*nx)*dt)                         # source/sink, in m
-#            print 'source', min(source.value), max(source.value)
-            res = 1e+10; resOld=1e+10
-            phi.updateOld()                
-#            dd.setValue((hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)
-            D.setValue(D_value(phi, ele, Tr_cut*cmask.value*drmask_not.value, cmask, drmask_not))
+        plotOptCrossSection = True
+        if plotOptCrossSection:
+            print "one more cross-section plot"
+            plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section",  nx=nx, ny=ny, label=d)
+
+        
+        res = 0.0
+        
+        phi.updateOld() 
+     
+        D.setValue(D_value(phi, ele, tra_to_cut, cmask, drmask_not))
+        C.setValue(C_value(phi, ele, tra_to_cut, cmask, drmask_not))
+#        D.setValue(100.)
 #            CC.setValue(C(phi.value-ele))    
             
-            for r in range(100):
-                resOld=res                
-#                res = eq.sweep(var=phi,dt=dt)
-                res = eq.sweep(var=phi)
-#                dd.setValue((hToTra(phi.value-ele)-Tr_cut)*cmask*drmask_not)
-                D.setValue(D_value(phi, ele, Tr_cut*cmask.value*drmask_not.value, cmask, drmask_not))
-#                print '    ', r, res                
-                if res < 1e-7: break
-                if res>=resOld: break    
-            #**********update setup**************            
-    #        if midFieldDrains==True:            
-    #            surr= adjacent_mean(phi.value, ny, nx, idxdrains)          # water table in the surrounding cells of a drain cell
-    #            bmask = np.zeros(np.shape(np.ravel(m)),dtype=bool)         # new drain mask
-    #            bmask[idxdrains]= surr-ele[idxdrains]>ddepth               # set false if wt in surrounding < water level in drain
-    #            drmask.setValue(bmask)                                     # update the drain mask           
-            s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water
-            phi.setValue(s)                                                # set new values for water table
+        for r in range(max_sweeps):
+            resOld=res
+                
+            res = eq.sweep(var=phi, dt=timeStep) # solve linearization of PDE
+
+
+            print "sum of Ds: ", np.sum(D.value)/1e8 
+            print "average wt: ", np.average(phi.value-ele)
             
-    #        fN=Nflag            
-    #        Nflag = False if min(phi.value) > H else True
-    #        if fN != Nflag:
-    #            if min(phi.value) > H:
-    #                print 'Changing boundary conditions -> Dirichlet'
-    #                phi.constrain(H, mesh.facesLeft)
-    #                phi.constrain(H, mesh.facesRight)
-    #                phi.constrain(H, mesh.facesTop)
-    #                phi.constrain(H, mesh.facesBottom)
-    #            else:
-    #                print 'Changing boundary conditions -> Neumann'
-    #                phi.faceGrad.constrain([0], mesh.facesLeft)
-    #                phi.faceGrad.constrain([0], mesh.facesRight)
-    #                phi.faceGrad.constrain([0], mesh.facesTop)
-    #                phi.faceGrad.constrain([0], mesh.facesBottom)
+            print 'residue diference:    ', res - resOld                
+            
+            
+            if abs(res - resOld) < 1e-7: break # it has reached to the solution of the linear system
         
-        hts[d,:,:]=phi.value.reshape(ny,nx)         
-        #Video outputfigs
-        date0=datetime.datetime(yr0,1,1)
-        datenow=date0+datetime.timedelta(days=d)
-        x=range(nx) 
-        y=range(ny)
-        X,Y =np.meshgrid(x,y)
-    
-        """
-        plt.close('all')
-        fig=plt.figure()
-        Z= ele.reshape(ny,nx)-hts[d,:,:]               
-        if d < 10: 
-            prenum= '00'
-        elif d<100:
-            prenum='0'
-        else:
-            prenum=''
-        nro='striphy '+ prenum + str(d)
-        ax = fig.add_subplot(111);
-        levels=[0.0, 0.2, 0.4, 1.0]
-        plt.title(datenow.date())
-        plt.imshow(ele.reshape(ny,nx)-hts[d,:,:], vmin = 0.0, vmax=1., cmap='Accent', interpolation=None, \
-            extent=[0,nx*dx,0,ny*dy]); plt.colorbar()
-        CS=plt.contour(X*dx,Y*dy,Z, levels, colors='g'); plt.clabel(CS, fontsize=10)
-        sfolder='C:\Apps\WinPython-64bit-2.7.10.3\IPEWG\\hydro\\figs\\vid\\'
-        plt.savefig(sfolder+nro+'.png')
-        """            
-        d +=1
+        if (D.value<0.).any():
+                print "Some value in D is negative!"
+
+        # For some plots
+        avg_wt_over_time.append(np.average(phi.value-ele))
+        avg_D_over_time.append(np.average(D.value))
         
-    PrOpt=False
-    if PrOpt==True:   
-        x=range(nx) 
-        y=range(ny)
-        X,Y =np.meshgrid(x,y)
-        fig=plt.figure()            
-     
-        for r in range(1,days):
-            Z= ele.reshape(ny,nx)-hts[r-1,:,:]               
-            nro='33'+str(r)
-            ax = fig.add_subplot(int(nro));
-            levels=[-0.2,0.0, 0.2, 0.4, 1.0]
-            plt.imshow(ele.reshape(ny,nx)-hts[r-1,:,:], vmin = -0.5, vmax=1., cmap='Accent', interpolation=None, \
-                extent=[0,nx*dx,0,ny*dy]); plt.colorbar()
-            CS=plt.contour(X*dx,Y*dy,Z, levels, colors='g'); plt.clabel(CS, fontsize=10)
-    #else:
-    #    fig=plt.figure()            
-    #    levels=[-0.2, 0.0, 0.2, 0.4, 1.0]
-    #
-    #    Z= ele.reshape(ny,nx)-hts[d-1,:,:]               
-    #    plt.imshow(ele.reshape(ny,nx)-hts[d-1,:,:], vmin = -0.5, vmax=1., cmap='Accent', interpolation=None, \
-    #        extent=[0,nx*dx,0,ny*dy]); plt.colorbar()
-    #    CS=plt.contour(X*dx,Y*dy,Z, levels, colors='g'); plt.clabel(CS, fontsize=10)
+
+        if remove_ponding_water:                 
+            s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water. This also removes phi in those masked values (for the plot only)
+            phi.setValue(s)                                                # set new values for water table
     
-    """ Volume of dry peat calc. Review!"""
+    
+    """ Volume of dry peat calc."""
     peat_vol_weights = utilities.PeatV_weight_calc(np.array(~dr*catchment_mask,dtype=int))
     dry_peat_volume = utilities.PeatVolume(peat_vol_weights, (ele-phi.value).reshape(ny,nx))
 #    print "Dry peat volume = ", dry_peat_volume
     
     if plotOpt:
-        plt.figure() 
-        plt.title("elevation-phi in the end")
-        plt.imshow((ele-phi.value).reshape(ny,nx), cmap='pink', interpolation='nearest'); plt.colorbar()
-        #        CS=plt.contour(X*dx,Y*dy,Z, levels, colors='g'); plt.clabel(CS, fontsize=10)
+        plot_2D_raster(((hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=(phi.value - ele), h_to_tra_and_C_dict=httd) - tra_to_cut)*cmask.value *drmask_not.value ).reshape(ny,nx), title="D in the end")
+        plot_2D_raster((ele-phi.value).reshape(ny,nx), title="elevation - phi Final state")
+        plot_2D_raster((phi.value).reshape(ny,nx), title="phi Final state")
+        plot_2D_raster((ele).reshape(ny,nx), title="elevation Final state")
         
-        #plt.figure()
-        #plt.title("Transmissivity at the end")
-        #plt.imshow(((hToTra(ele-phi.value)-T_bottom)*cmask*drmask_not).value.reshape(ny,nx), cmap='plasma'); plt.colorbar()
-            
-                
-        plt.figure()
-        plt.title("C in the end")
-        plt.imshow(C(ele-phi.value).reshape(ny,nx), cmap='pink', interpolation='nearest'); plt.colorbar()
+       
+        # Areas with WT <-1.0; areas with WT >0
+#        plot_raster_by_value((ele-phi.value).reshape(ny,nx), title="ele-phi in the end, colour keys", bottom_value=0.5, top_value=0.01)
+        
         
         plt.show()
+    
+    plt.figure()
+    plt.plot(avg_D_over_time)
+    plt.title("avg D over time")
+    plt.figure()
+    plt.plot(avg_wt_over_time)
+    plt.title("avg_wt_over_time")
+    plt.show()
         
-    change_in_canals = ((ele-phi.value)*cmask.value*drmask.value).reshape(ny,nx) - ((ele-H)*cmask.value* drmask.value).reshape(ny,nx)
-    final_water_table = (phi.value).reshape(ny,nx)
+#    change_in_canals = (ele-phi.value).reshape(ny,nx)*(drmask.value.reshape(ny,nx)) - ((ele-H)*drmask.value).reshape(ny,nx)
+    resulting_phi = phi.value.reshape(ny,nx)
 
-        
 
-    return dry_peat_volume, change_in_canals, final_water_table
+    return dry_peat_volume, resulting_phi, dneg

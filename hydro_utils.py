@@ -233,7 +233,7 @@ def peat_map_interp_functions():
     z = np.cumsum(dz)-dz/2.  # depth of the layer center point, m
     
     # Loop through all soil types to construct dictionary h_to_tra
-    h_to_tra_dict = {}
+    h_to_tra_and_C_dict = {}
     
     for peat_type in [i for i in spara.keys() if i != 'gen']:
         lenvp=len(spara[peat_type]['vonP top'])    
@@ -242,21 +242,21 @@ def peat_map_interp_functions():
         peat_type_top_list = [spara[peat_type]['peat type top']]*lenvp
         lenpt = len(spara[peat_type]['peat type top']); ptype[0:lenpt] = peat_type_top_list  
         pF, Ksat = peat_hydrol_properties(vonP, var='H', ptype=ptype)  # peat hydraulic properties after Päivänen 1973    
-        _, _, hToTra, _ = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
+        _, _, hToTra, C = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
 
-        h_to_tra_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra}
+        h_to_tra_and_C_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra, 'hToSto':C}
 
-    return h_to_tra_dict
+    return h_to_tra_and_C_dict
 
 
-def peat_map_h_to_tra(soil_type_mask, gwt, h_to_tra_dict):
+def peat_map_h_to_tra(soil_type_mask, gwt, h_to_tra_and_C_dict):
     """
     Input:
         - soil_type_mask: nparray or flattened nparray of dim the DEM, and peat soil type numbers as elements.
         - gwt: nparray or flattened nparray of gwt.
             If gwt = phi-ele in the hydrology code, then the output is the full depth transmissivity
             If gwt = bottom elevation - ele, then the ouput is the transmissivity to be cut from the above full depth trans.
-        - h_to_tra_dict: dict. Output of peat_map_interp_functions().
+        - h_to_tra_and_C_dict: dict. Output of peat_map_interp_functions().
     
     Output:
         - tra: Flattened nparray of new transmissivities.
@@ -270,12 +270,41 @@ def peat_map_h_to_tra(soil_type_mask, gwt, h_to_tra_dict):
     if soil_type_mask.size != gwt.size:
         raise ValueError('The two should have the same dimensions')
         
-    for soil_type_number, value in h_to_tra_dict.iteritems():
+    for soil_type_number, value in h_to_tra_and_C_dict.iteritems():
         indices = np.where(soil_type_mask == soil_type_number)
         if np.shape(indices)[1]>0:
             tra[indices] = value['hToTra'](gwt[indices])
     
     return tra
+
+def peat_map_h_to_sto(soil_type_mask, gwt, h_to_tra_and_C_dict):
+    """
+    Input:
+        - soil_type_mask: nparray or flattened nparray of dim the DEM, and peat soil type numbers as elements.
+        - gwt: nparray or flattened nparray of gwt.
+            If gwt = phi-ele in the hydrology code, then the output is the full depth storage coeff
+            If gwt = bottom elevation - ele, then the ouput is the storage coeff to be cut from the above full depth trans.
+        - h_to_tra_and_C_dict: dict. Output of peat_map_interp_functions().
+    
+    Output:
+        - sto: Flattened nparray of new storage coeffs C.
+    """
+    # MAYBE READ SOIL ARRAY TYPE HERE?
+    soil_type_mask = np.ravel(soil_type_mask) # in case it is not flattened
+    gwt = np.ravel(gwt)
+    
+    sto = np.ones(np.shape(soil_type_mask))*-999 # Initialize output array with nodata entries
+    
+    if soil_type_mask.size != gwt.size:
+        raise ValueError('The two should have the same dimensions')
+        
+    for soil_type_number, value in h_to_tra_and_C_dict.iteritems():
+        indices = np.where(soil_type_mask == soil_type_number)
+        if np.shape(indices)[1]>0:
+            sto[indices] = value['hToSto'](gwt[indices])
+    
+    return sto
+
 
 
 

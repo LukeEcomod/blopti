@@ -6,7 +6,7 @@ Created on Thu Jul 26 14:13:10 2018
 """
 import pandas as pd
 import numpy as np
-import rasterio
+
 
 def getParams(ParamFile, shname , lrs):
     #-----Profile parameters --------------
