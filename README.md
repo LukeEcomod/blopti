@@ -30,3 +30,4 @@ The code needs the following data to run:
   - (A soil depth map as a raster image.) UNDER DEV.
 
 The data must be stored in the path "data/" relative to the ```.py``` files.
+
