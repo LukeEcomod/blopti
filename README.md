@@ -13,7 +13,10 @@ Optional packages:
   - ``` deap ```: For Genetic Algorithm implementation. Can be added to the list above.
   - ``` simanneal ```: For Simulated Annealing implementation. Cannot be added to the list above and must be installed separately. Instructions [here](https://github.com/perrygeo/simanneal).
 
-2. Clone or download this repository.
+2. Don't forget to activate the new environment!
+
+3. Clone or download this repository.
+
 
 ## How to use?
 
