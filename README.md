@@ -17,11 +17,20 @@ Optional packages:
 
 3. Clone or download this repository.
 
-
 ## How to use?
+There are 3 alternative ways to run the code:
+  - ```main.py``` runs the general computation without any optimization algorithm. It still allows for more than one iteration.
+  - ```ga_try_2.py``` runs the Genetic Algorithm version.
+  - ```simanneal_try.py```runs the Simulated Annealing version.
 
-  
- 
+The code needs the following data to run:
+  - A DEM as a raster image.
+  - A canal network as a raster image.
+  - A soil type map as a raster image.
+  - (A soil depth map as a raster image.) UNDER DEV.
+
+The data must be stored in the path "data/" relative to the ```.py``` files.
+
 
 
 
