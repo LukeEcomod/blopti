@@ -205,7 +205,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, 
     #********************************************************
                                                                   
     d=0   # day counter
-    timeStep = 10.                                                            
+    timeStep = 1.                                                            
     days=10 # outmost loop. "timesteps" in fipy manual. Needed due to non-linearity.
     max_sweeps = 1 # inner loop.
     ET = 0. # constant evapotranspoiration mm/day
@@ -221,14 +221,14 @@ def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, 
                                                              
     #********Finite volume computation******************
     for d in range(days):
-        if d>2:
-            timeStep = 5.
-        if d > 20:
-            timeStep = 3.
-        if d > 50:
-            timeStep = 2.
-        if d>100:
-            timeStep = 1.
+#        if d>2:
+#            timeStep = 5.
+#        if d > 20:
+#            timeStep = 3.
+#        if d > 50:
+#            timeStep = 2.
+#        if d>100:
+#            timeStep = 1.
         print "timeStep = ", timeStep
         print d
         
