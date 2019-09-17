@@ -2,6 +2,7 @@
 Canal blocking computation for Winrock.
 
 ## Installation
+--- Tested on Ubuntu 18.04 LTS---
 1. Create a new environment within Conda with minimal packages:
 
 ```

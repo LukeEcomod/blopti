@@ -1,5 +1,0 @@
-
- dry_peat_volume = 239170.318134    blocked dams:(array([165, 171, 231], dtype=int64), array([307, 264, 124], dtype=int64))   DATE: Fri Nov 30 09:44:45 2018    Montecarlo steps = 5
- dry_peat_volume = 239205.221439    blocked dams:[4125, 4782, 818]   DATE: Fri Nov 30 11:22:39 2018    Montecarlo steps = 5
- dry_peat_volume = 239361.477893    blocked dams:[2644, 993, 864]   DATE: Fri Nov 30 11:52:34 2018    Montecarlo steps = 5
- dry_peat_volume = 238538.375868    blocked dams:[4405, 150, 1439]   DATE: Fri Nov 30 13:56:16 2018    Montecarlo steps = 50

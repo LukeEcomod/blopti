@@ -42,9 +42,9 @@ Read and preprocess data
 """
 retrieve_canalarr_from_pickled = False
 preprocessed_datafolder = r"data"
-dem_rst_fn = preprocessed_datafolder + r"\lidar_100_resampled_interp.tif"
-can_rst_fn = preprocessed_datafolder + r"\canal_clipped_resampled_2.tif"
-peat_type_rst_fn = preprocessed_datafolder + r"\Landcover_clipped.tif"
+dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp.tif"
+can_rst_fn = preprocessed_datafolder + r"/canal_clipped_resampled_2.tif"
+peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
     CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=can_rst_fn, dem_rst_fn=dem_rst_fn)
@@ -152,7 +152,7 @@ ele = dem
 # and use it as initial condition to improve convergence time of the new solution
 retrieve_transient_phi_sol_from_pickled = True
 if retrieve_transient_phi_sol_from_pickled:
-    with open(r"pickled\transient_phi_sol.pkl", 'r') as f:
+    with open(r"pickled/transient_phi_sol.pkl", 'r') as f:
         phi_ini = pickle.load(f)
     print "transient phi solution loaded as initial condition"
     
