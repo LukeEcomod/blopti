@@ -15,6 +15,8 @@ import numpy as np
 import fipy as fp
 import matplotlib.pyplot as plt
 import copy
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable # for plots 
+from mpl_toolkits.axes_grid1.colorbar import colorbar
 
 import hydro_utils, utilities
 
@@ -23,35 +25,34 @@ import hydro_utils, utilities
 """
 fp.solvers.DefaultSolver = fp.solvers.LinearLUSolver
 
-def plot_2D_raster(raster, title, colormap='pink'):
-    """
-    raster must be converted to (ny, nx) form in advance. 
-    """
-    plt.figure()
-    plt.title(title)
-    plt.imshow(raster, cmap=colormap, interpolation='nearest', animated='True')
-    plt.colorbar()
-    
-    return 0
-
-def plot_raster_by_value(raster, title, bottom_value=None, top_value=None):
-    # No differences if unspecified bottom and top
-    if bottom_value == None:
-        bottom_value = raster.min()
-    if top_value == None:
-        top_value = raster.max()
+def big_4_raster_plot(title, raster1, raster2, raster3, raster4):
+        fig1, axes1 = plt.subplots(nrows=2, ncols=2, figsize=(16,12), dpi=80)
+        fig1.suptitle(title)
         
-    raster_discrete = np.zeros(shape=raster.shape)
-    raster_discrete = raster_discrete + np.array(raster <= bottom_value, dtype=int) * (-1)
-    raster_discrete = raster_discrete + np.array(raster >= top_value, dtype=int) * 1
-    
-    plt.figure()
-    plt.title(title)
-    plt.imshow(raster_discrete, cmap='Reds', interpolation='nearest')
-    plt.colorbar()
+        a = axes1[1,0].imshow(raster1, cmap='pink', interpolation='nearest')
+        ax1_divider = make_axes_locatable(axes1[0,0])
+        cax1 = ax1_divider.append_axes('right', size='7%', pad='2%')
+        plt.colorbar(a, cax=cax1)
+        axes1[1,0].set(title="D")
+        
+        b = axes1[0,1].imshow(raster2, cmap='viridis')
+        ax2_divider = make_axes_locatable(axes1[0,1])
+        cax2 = ax2_divider.append_axes('right', size='7%', pad='2%')
+        plt.colorbar(b, cax=cax2)
+        axes1[0,1].set(title="canal water level")
+        
+        c = axes1[0,0].imshow(raster3, cmap='viridis')
+        ax3_divider = make_axes_locatable(axes1[1,0])
+        cax3 = ax3_divider.append_axes('right', size='7%', pad='2%')
+        plt.colorbar(c, cax=cax3)
+        axes1[0,0].set(title="DEM")
+        
+        d = axes1[1,1].imshow(raster4, cmap='pink')
+        ax4_divider = make_axes_locatable(axes1[1,1])
+        cax4 = ax4_divider.append_axes('right', size='7%', pad='2%')
+        plt.colorbar(d, cax=cax4)
+        axes1[1,1].set(title="elevation - phi")
 
-    
-    return 0
 
 def plot_line_of_peat(raster, y_value, title, nx, ny, label):
     plt.figure(10)
@@ -148,11 +149,14 @@ def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, 
     
     
     if plotOpt:
-        plot_2D_raster(((hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=(phi.value - ele), h_to_tra_and_C_dict=httd) - tra_to_cut)*cmask.value *drmask_not.value ).reshape(ny,nx), title="D in the beginning")
-        plot_2D_raster(phi.value.reshape(ny,nx), title="phi initial state")
-        plot_2D_raster((ele.reshape(ny,nx) - wt_canal_arr) * dr * catchment_mask, title="canal water level", colormap='viridis')
-        plot_2D_raster(ele.reshape(ny,nx), title="DEM")
-        plot_2D_raster((ele-phi.value).reshape(ny,nx), title="elevation - phi Initial state")
+        big_4_raster_plot(title='Before the computation',
+                raster1=((hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=(phi.value - ele), h_to_tra_and_C_dict=httd) - tra_to_cut)*cmask.value *drmask_not.value ).reshape(ny,nx),
+                raster2=(ele.reshape(ny,nx) - wt_canal_arr) * dr * catchment_mask,
+                raster3=ele.reshape(ny,nx),
+                raster4=(ele-phi.value).reshape(ny,nx)
+                )
+        
+
     plotOptCrossSection = True
     if plotOptCrossSection:
         y_value=170
@@ -260,6 +264,12 @@ def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, 
             
             
             if abs(res - resOld) < 1e-7: break # it has reached to the solution of the linear system
+            
+        if solve_mode=='transient': #solving in steadystate we remove water only at the very end
+            if remove_ponding_water:                 
+                s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water. This also removes phi in those masked values (for the plot only)
+                phi.setValue(s)                                                # set new values for water table
+
         
         if (D.value<0.).any():
                 print "Some value in D is negative!"
@@ -268,7 +278,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, 
         avg_wt_over_time.append(np.average(phi.value-ele))
         avg_D_over_time.append(np.average(D.value))
         
-
+    if solve_mode=='steadystate': #solving in steadystate we remove water only at the very end
         if remove_ponding_water:                 
             s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water. This also removes phi in those masked values (for the plot only)
             phi.setValue(s)                                                # set new values for water table
@@ -277,27 +287,33 @@ def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, 
     """ Volume of dry peat calc."""
     peat_vol_weights = utilities.PeatV_weight_calc(np.array(~dr*catchment_mask,dtype=int))
     dry_peat_volume = utilities.PeatVolume(peat_vol_weights, (ele-phi.value).reshape(ny,nx))
-#    print "Dry peat volume = ", dry_peat_volume
-    
-    if plotOpt:
-        plot_2D_raster(((hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=(phi.value - ele), h_to_tra_and_C_dict=httd) - tra_to_cut)*cmask.value *drmask_not.value ).reshape(ny,nx), title="D in the end")
-        plot_2D_raster((ele-phi.value).reshape(ny,nx), title="elevation - phi Final state")
-        plot_2D_raster((phi.value).reshape(ny,nx), title="phi Final state")
-        plot_2D_raster((ele).reshape(ny,nx), title="elevation Final state")
-        
+#    print "Dry peat volume = ", dry_peat_volume     
        
         # Areas with WT <-1.0; areas with WT >0
 #        plot_raster_by_value((ele-phi.value).reshape(ny,nx), title="ele-phi in the end, colour keys", bottom_value=0.5, top_value=0.01)
         
         
-        plt.show()
+        
     
-    plt.figure()
-    plt.plot(avg_D_over_time)
-    plt.title("avg D over time")
-    plt.figure()
-    plt.plot(avg_wt_over_time)
-    plt.title("avg_wt_over_time")
+    if plotOpt:
+        big_4_raster_plot(title='After the computation',
+            raster1=((hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask, gwt=(phi.value - ele), h_to_tra_and_C_dict=httd) - tra_to_cut)*cmask.value *drmask_not.value ).reshape(ny,nx),
+            raster2=(ele.reshape(ny,nx) - wt_canal_arr) * dr * catchment_mask,
+            raster3=ele.reshape(ny,nx),
+            raster4=(ele-phi.value).reshape(ny,nx)
+            )
+        
+        fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12,9), dpi=80)
+        x = np.arange(-40,1,0.1)
+        axes[0,0].plot(httd[1]['hToTra'](x),x)
+        axes[0,0].set(title='hToTra', ylabel='depth')
+        axes[0,1].plot(httd[1]['hToSto'](x),x)
+        axes[0,1].set(title='hToSto')
+        axes[1,0].plot(avg_D_over_time)
+        axes[1,0].set(title="avg D over time")
+        axes[1,1].plot(avg_wt_over_time)
+        axes[1,1].set(title="avg_wt_over_time")
+    
     plt.show()
         
 #    change_in_canals = (ele-phi.value).reshape(ny,nx)*(drmask.value.reshape(ny,nx)) - ((ele-H)*drmask.value).reshape(ny,nx)
