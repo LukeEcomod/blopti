@@ -30,7 +30,7 @@ def big_4_raster_plot(title, raster1, raster2, raster3, raster4):
         fig1.suptitle(title)
         
         a = axes1[1,0].imshow(raster1, cmap='pink', interpolation='nearest')
-        ax1_divider = make_axes_locatable(axes1[0,0])
+        ax1_divider = make_axes_locatable(axes1[1,0])
         cax1 = ax1_divider.append_axes('right', size='7%', pad='2%')
         plt.colorbar(a, cax=cax1)
         axes1[1,0].set(title="D")
@@ -42,7 +42,7 @@ def big_4_raster_plot(title, raster1, raster2, raster3, raster4):
         axes1[0,1].set(title="canal water level")
         
         c = axes1[0,0].imshow(raster3, cmap='viridis')
-        ax3_divider = make_axes_locatable(axes1[1,0])
+        ax3_divider = make_axes_locatable(axes1[0,0])
         cax3 = ax3_divider.append_axes('right', size='7%', pad='2%')
         plt.colorbar(c, cax=cax3)
         axes1[0,0].set(title="DEM")
@@ -64,7 +64,7 @@ def plot_line_of_peat(raster, y_value, title, nx, ny, label):
         
     
 
-def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, wt_canal_arr, boundary_arr,
+def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_canal_arr, boundary_arr,
               peat_type_mask, httd, tra_to_cut, sto_to_cut, 
               diri_bc=0.9, neumann_bc = None, plotOpt=False, remove_ponding_water=True):
     """
@@ -194,7 +194,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, 
         if diri_bc != None:
     #        diri_boundary = fp.CellVariable(mesh=mesh, value= np.ravel(diri_boundary_value(boundary_mask, ele2d, diri_bc)))
             
-            eq = fp.TransientTerm(coeff=C) == (fp.DiffusionTerm(coeff=D) 
+            eq = fp.TransientTerm(coeff=5.) == (fp.DiffusionTerm(coeff=D) 
                         + source*cmask*drmask_not 
                         - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*np.ravel(boundary_arr)
                         - fp.ImplicitSourceTerm(drmask*largeValue)    + drmask*largeValue*(np.ravel(wt_canal_arr))
