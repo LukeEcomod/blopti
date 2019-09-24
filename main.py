@@ -138,7 +138,6 @@ wt_canals = iWTcanlist
 """
 ny, nx = dem.shape
 dx = 1.; dy = 1. # metres per pixel  
-
 diri_bc = 0.0
 
 
@@ -150,7 +149,7 @@ ele = dem
 
 # Get a pickled phi solution (not ele-phi!) computed before without blocks, independently,
 # and use it as initial condition to improve convergence time of the new solution
-retrieve_transient_phi_sol_from_pickled = True
+retrieve_transient_phi_sol_from_pickled = False
 if retrieve_transient_phi_sol_from_pickled:
     with open(r"pickled/transient_phi_sol.pkl", 'r') as f:
         phi_ini = pickle.load(f)

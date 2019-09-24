@@ -155,7 +155,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         stoToGwl =interp1d(np.array(stoT), np.array(gwlT), fill_value='extrapolate')
         cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT)
         cc[cc<0.2]=0.2
-        C = interp1d(np.array(gwlT), cc, fill_value='extrapolate')  #storage coefficient function   
+        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function   
         #C = UnivariateSpline(np.array(gwlT), cc, s=10)                    
         #C=interS(np.array(gwlT), cc, k=5)
 
@@ -301,7 +301,7 @@ def peat_map_h_to_sto(soil_type_mask, gwt, h_to_tra_and_C_dict):
     for soil_type_number, value in h_to_tra_and_C_dict.iteritems():
         indices = np.where(soil_type_mask == soil_type_number)
         if np.shape(indices)[1]>0:
-            sto[indices] = value['hToSto'](gwt[indices])
+            sto[indices] = value['C'](gwt[indices])
     
     return sto
 
