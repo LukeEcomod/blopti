@@ -153,7 +153,8 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         stoT = list(stoT); gwl= list(gwlT)        
         sto.reverse(); gwl.reverse()
         stoToGwl =interp1d(np.array(stoT), np.array(gwlT), fill_value='extrapolate')
-        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT)
+#        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT) ??? Ask Ari
+        cc = np.gradient(gwlToSto(gwlT), gwlT) # Iñaki
         cc[cc<0.2]=0.2
         C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function   
         #C = UnivariateSpline(np.array(gwlT), cc, s=10)                    
@@ -242,9 +243,9 @@ def peat_map_interp_functions():
         peat_type_top_list = [spara[peat_type]['peat type top']]*lenvp
         lenpt = len(spara[peat_type]['peat type top']); ptype[0:lenpt] = peat_type_top_list  
         pF, Ksat = peat_hydrol_properties(vonP, var='H', ptype=ptype)  # peat hydraulic properties after Päivänen 1973    
-        hToSto, _, hToTra, C = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
+        _, _, hToTra, C = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
 
-        h_to_tra_and_C_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra, 'hToSto':hToSto, 'C':C}
+        h_to_tra_and_C_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra, 'C':C}
 
     return h_to_tra_and_C_dict
 
