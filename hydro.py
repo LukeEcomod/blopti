@@ -64,7 +64,7 @@ def plot_line_of_peat(raster, y_value, title, nx, ny, label):
         
     
 
-def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, wt_canal_arr, boundary_arr,
+def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_canal_arr, boundary_arr,
               peat_type_mask, httd, tra_to_cut, sto_to_cut, 
               diri_bc=0.9, neumann_bc = None, plotOpt=False, remove_ponding_water=True):
     """
@@ -213,10 +213,10 @@ def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, 
     days=10 # outmost loop. "timesteps" in fipy manual. Needed due to non-linearity.
     max_sweeps = 1 # inner loop.
     ET = 0. # constant evapotranspoiration mm/day
-    P = 6.0 # constant precipitation
+    P = 6.0 # constant precipitation mm/day
 
-#    source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m. For steadystate!
-    source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m. For steadystate!
+
+    source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m/day. For steadystate! Why for steadystate?
 
     avg_wt_over_time = []
     avg_D_over_time = []
@@ -265,7 +265,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, dt, ele, phi_initial, catchment_mask, 
             
             if abs(res - resOld) < 1e-7: break # it has reached to the solution of the linear system
             
-        if solve_mode=='transient': #solving in steadystate we remove water only at the very end
+        if solve_mode=='transient': #solving in steadystate will remove water only at the very end
             if remove_ponding_water:                 
                 s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water. This also removes phi in those masked values (for the plot only)
                 phi.setValue(s)                                                # set new values for water table

@@ -242,9 +242,9 @@ def peat_map_interp_functions():
         peat_type_top_list = [spara[peat_type]['peat type top']]*lenvp
         lenpt = len(spara[peat_type]['peat type top']); ptype[0:lenpt] = peat_type_top_list  
         pF, Ksat = peat_hydrol_properties(vonP, var='H', ptype=ptype)  # peat hydraulic properties after Päivänen 1973    
-        hToSto, _, hToTra, _ = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
+        hToSto, _, hToTra, C = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
 
-        h_to_tra_and_C_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra, 'hToSto':hToSto}
+        h_to_tra_and_C_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra, 'hToSto':hToSto, 'C':C}
 
     return h_to_tra_and_C_dict
 
