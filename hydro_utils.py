@@ -156,9 +156,13 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
 #        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT) ??? Ask Ari
         cc = np.gradient(gwlToSto(gwlT), gwlT) # Iñaki
         cc[cc<0.2]=0.2
-        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function   
-        #C = UnivariateSpline(np.array(gwlT), cc, s=10)                    
-        #C=interS(np.array(gwlT), cc, k=5)
+        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
+        
+        # Iñaki's way:
+        zeta = np.flip(-z)
+        C = interp1d(zeta, wrc(pF[0], zeta), bounds_error=False, fill_value=(0.2, 1.))
+
+        
 
     #import matplotlib.pylab as plt
     #plt.plot(gwlT, cc, 'ro')
