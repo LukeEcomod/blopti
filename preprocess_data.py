@@ -9,8 +9,20 @@ import numpy as np
 import rasterio
 import scipy.sparse
 
+
+def peat_depth_map(peat_depth_type_arr):
+    peat_depth_arr = np.ones(shape=peat_depth_type_arr.shape)
+    # information from excel
+    peat_depth_arr[peat_depth_type_arr==1] = 2. # depth in meters.
+    peat_depth_arr[peat_depth_type_arr==2] = 2.
+    peat_depth_arr[peat_depth_type_arr==3] = 4.
+    peat_depth_arr[peat_depth_type_arr==4] = 4.
+    peat_depth_arr[peat_depth_type_arr==5] = 8.
+    peat_depth_arr[peat_depth_type_arr==6] = 1.
+    
+    return peat_depth_arr
       
-def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn):
+def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn, peat_depth_rst_fn):
     """
     Deals with issues specific to each  set of input data rasters.
     Output
@@ -21,6 +33,8 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn):
         can_arr = can.read(1)
     with rasterio.open(peat_type_rst_fn) as pt:
         peat_type_arr = pt.read(1)
+    with rasterio.open(peat_depth_rst_fn) as pd:
+        peat_depth_arr = pd.read(1)
         
         
     #Some small changes to get mask of canals: 1 where canals exist, 0 otherwise
@@ -36,13 +50,23 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn):
     # fill some nodata values to get same size as dem
     peat_type_arr[(np.where(dem>0.1) and np.where(peat_type_arr <0.1))] = 1.
     
+    # control nodata values
+    peat_depth_arr[peat_depth_arr < 0] = -1
+    
+    peat_depth_arr = peat_depth_map(peat_depth_arr) # translate number keys to depths
+    
+    # fill some nodata values to get same size as dem
+    peat_depth_arr[(np.where(dem>0.1) and np.where(peat_depth_arr <0.1))] = 1.
+    
+    
     # Eliminate rows and columns full of noData values.
     # upper 5 rows, lower 5 rows, right 10 rows
     dem = dem[7:-7, 3:-13]
     can_arr = can_arr[7:-7, 3:-13]
     peat_type_arr = peat_type_arr[7:-7, 3:-13]
+    peat_depth_arr = peat_depth_arr[7:-7, 3:-13]
     
-    return can_arr, dem, peat_type_arr
+    return can_arr, dem, peat_type_arr, peat_depth_arr
     
 
 # Build the adjacency matrix up
@@ -79,7 +103,7 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
         - can_to_raster_list: list. Pixels corresponding to each canal.
     """
 
-    can_arr, dem, _ = read_preprocess_rasters(can_rst_fn, dem_rst_fn, dem_rst_fn)
+    can_arr, dem, _, _ = read_preprocess_rasters(can_rst_fn, dem_rst_fn, dem_rst_fn, dem_rst_fn)
 
     
     # Convert labels of canals to 1,2,3...

@@ -45,6 +45,7 @@ preprocessed_datafolder = r"data"
 dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp.tif"
 can_rst_fn = preprocessed_datafolder + r"/canal_clipped_resampled_2.tif"
 peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"
+peat_depth_rst_fn = preprocessed_datafolder + r"/peat_depth.tif"
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
     CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=can_rst_fn, dem_rst_fn=dem_rst_fn)
@@ -59,7 +60,7 @@ elif retrieve_canalarr_from_pickled==True:
 else:
     print "Canal adjacency matrix and raster loaded from memory."
     
-_ , dem, peat_type_arr = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn)
+_ , dem, peat_type_arr, peat_depth_arr = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn, peat_depth_rst_fn)
 
 print("rasters read and preprocessed from file")
 
@@ -74,16 +75,14 @@ boundary_mask = utilities.peel_raster(dem, catchment_mask)
 # after peeling, catchment_mask should only be the fruit:
 catchment_mask[boundary_mask] = False
 
-# soil types and soil physical properties:
+# soil types and soil physical properties and soil depth:
 peat_type_mask = peat_type_arr * catchment_mask
+peat_bottom_elevation = - peat_depth_arr * catchment_mask # meters with respect to dem surface. Should be negative!
 
 
 h_to_tra_and_C_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
 #soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
 
-BOTTOM_ELE = -6.0 # meters with respect to dem surface. Should be negative!
-peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE
-peat_bottom_elevation = peat_bottom_elevation*catchment_mask
 tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask,
                                            gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
 sto_to_cut = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask,
