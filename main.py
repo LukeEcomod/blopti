@@ -83,6 +83,9 @@ peat_bottom_elevation = - peat_depth_arr * catchment_mask # meters with respect 
 h_to_tra_and_C_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
 #soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
 
+#BOTTOM_ELE = -6.0 
+#peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE
+#peat_bottom_elevation = peat_bottom_elevation*catchment_mask
 tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask,
                                            gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
 sto_to_cut = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask,
