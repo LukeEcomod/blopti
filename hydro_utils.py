@@ -159,8 +159,8 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
         
         # Iñaki's way:
-        zeta = np.flip(-z)
-        C = interp1d(zeta, wrc(pF[0], zeta), bounds_error=False, fill_value=(0.2, 1.))
+        zeta = -z
+        C = interp1d(zeta, wrc(pF, zeta), bounds_error=False, fill_value=(wrc(pF[-1], zeta[-1]), 1.))
 
         
 
@@ -198,7 +198,7 @@ def peat_map_interp_functions():
     
     'Water':{'ref': 1, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':10.0,
             'peat type top':'L', 'peat type bottom':['S']},
     
     'Forest':{'ref': 2, # reference number that appears on the peat type map

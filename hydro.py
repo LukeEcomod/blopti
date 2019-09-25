@@ -195,7 +195,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         if diri_bc != None:
     #        diri_boundary = fp.CellVariable(mesh=mesh, value= np.ravel(diri_boundary_value(boundary_mask, ele2d, diri_bc)))
             
-            eq = fp.TransientTerm(coeff=1.0) == (fp.DiffusionTerm(coeff=D) 
+            eq = fp.TransientTerm(coeff=C) == (fp.DiffusionTerm(coeff=D) 
                         + source*cmask*drmask_not 
                         - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*np.ravel(boundary_arr)
                         - fp.ImplicitSourceTerm(drmask*largeValue)    + drmask*largeValue*(np.ravel(wt_canal_arr))
@@ -305,7 +305,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
             )
         
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12,9), dpi=80)
-        x = np.arange(-40,1,0.1)
+        x = np.arange(-21,1,0.1)
         axes[0,0].plot(httd[1]['hToTra'](x),x)
         axes[0,0].set(title='hToTra', ylabel='depth')
         axes[0,1].plot(httd[1]['C'](x),x)
