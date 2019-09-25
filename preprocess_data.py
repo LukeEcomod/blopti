@@ -34,7 +34,7 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn):
     # control nodata values
     peat_type_arr[peat_type_arr < 0] = -1
     # fill some nodata values to get same size as dem
-    peat_type_arr[(np.where(dem>0.1) or np.where(peat_type_arr <0))] = 1.
+    peat_type_arr[(np.where(dem>0.1) and np.where(peat_type_arr <0.1))] = 1.
     
     # Eliminate rows and columns full of noData values.
     # upper 5 rows, lower 5 rows, right 10 rows

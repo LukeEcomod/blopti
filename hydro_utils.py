@@ -275,6 +275,9 @@ def peat_map_h_to_tra(soil_type_mask, gwt, h_to_tra_and_C_dict):
     if soil_type_mask.size != gwt.size:
         raise ValueError('The two should have the same dimensions')
         
+    if soil_type_mask.max() > max(h_to_tra_and_C_dict.keys()):
+        raise ValueError('More soil types in the raster than in the parameter dictionary h_to_tra_and_C_dict')
+        
     for soil_type_number, value in h_to_tra_and_C_dict.iteritems():
         indices = np.where(soil_type_mask == soil_type_number)
         if np.shape(indices)[1]>0:
@@ -302,6 +305,9 @@ def peat_map_h_to_sto(soil_type_mask, gwt, h_to_tra_and_C_dict):
     
     if soil_type_mask.size != gwt.size:
         raise ValueError('The two should have the same dimensions')
+    
+    if soil_type_mask.max() > max(h_to_tra_and_C_dict.keys()):
+        raise ValueError('More soil types in the raster than in the parameter dictionary h_to_tra_and_C_dict')
         
     for soil_type_number, value in h_to_tra_and_C_dict.iteritems():
         indices = np.where(soil_type_mask == soil_type_number)
