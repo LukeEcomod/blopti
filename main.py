@@ -78,7 +78,6 @@ catchment_mask[boundary_mask] = False
 peat_type_mask = peat_type_arr * catchment_mask
 
 
-
 h_to_tra_and_C_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
 #soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
 

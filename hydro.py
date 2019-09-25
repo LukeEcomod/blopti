@@ -203,8 +203,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
                         )
         elif neumann_bc != None:
             raise NotImplementedError("Neumann BC not implemented yet!") # DOESN'T WORK RIGHT NOW!
-        
-        return 0          
+             
     
     #********************************************************
                                                                   
