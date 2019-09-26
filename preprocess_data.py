@@ -43,7 +43,9 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn, peat_depth
     can_arr = np.array(can_arr, dtype=int)
     
     # Convert from numpy no data to -9999.0
+    dem[dem[<-10]] = -9999.0
     dem[np.where(np.isnan(dem))] = -9999.0
+    dem[dem > 1e20] = -9999.0 # just in case
     
     # control nodata values
     peat_type_arr[peat_type_arr < 0] = -1
@@ -61,10 +63,10 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn, peat_depth
     
     # Eliminate rows and columns full of noData values.
     # upper 5 rows, lower 5 rows, right 10 rows
-    dem = dem[7:-7, 3:-13]
-    can_arr = can_arr[7:-7, 3:-13]
-    peat_type_arr = peat_type_arr[7:-7, 3:-13]
-    peat_depth_arr = peat_depth_arr[7:-7, 3:-13]
+    dem = dem[7:-7, 5:-15]
+    can_arr = can_arr[7:-7, 5:-15]
+    peat_type_arr = peat_type_arr[7:-7, 5:-15]
+    peat_depth_arr = peat_depth_arr[7:-7, 5:-15]
     
     return can_arr, dem, peat_type_arr, peat_depth_arr
     
@@ -138,17 +140,17 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
     
     return matrix_csr, rasterized_canals, c_to_r_list
 
-            
-if __name__== '__main__':
-    datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Canal_Block_Data\GIS_files\Stratification_layers"
-    preprocess_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\preprocess"
-    dem_rst_fn = r"\dem_clip_cean.tif"
-    can_rst_fn = r"\can_rst_clipped.tif"
-    
-    cm, cr, c_to_r_list = gen_can_matrix_and_raster_from_raster(can_rst_fn=preprocess_datafolder+can_rst_fn,
-                                                                dem_rst_fn=datafolder+dem_rst_fn)
-    # Pickle outcome!
-#    import pickle
+   # Activate this to run this module as main         
+#if __name__== '__main__':
+#    datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Canal_Block_Data\GIS_files\Stratification_layers"
+#    preprocess_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\preprocess"
+#    dem_rst_fn = r"\dem_clip_cean.tif"
+#    can_rst_fn = r"\can_rst_clipped.tif"
+#    
+#    cm, cr, c_to_r_list = gen_can_matrix_and_raster_from_raster(can_rst_fn=preprocess_datafolder+can_rst_fn,
+#                                                                dem_rst_fn=datafolder+dem_rst_fn)
+#    # Pickle outcome!
+##    import pickle
 #    pickle_folder = r"C:\Users\L1817\Winrock"
 #    with open(pickle_folder + r'\50x50_DEM_and_canals.pkl', 'w') as f:
 #        pickle.dump([cm, cr, c_to_r_list], f)

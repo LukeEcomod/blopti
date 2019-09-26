@@ -22,7 +22,7 @@ Read general help on main.README.txt
 
 time0 = time.time()
 
-np.random.seed(3)
+#np.random.seed(3)
 
 """
 Parse command-line arguments
@@ -42,7 +42,7 @@ Read and preprocess data
 """
 retrieve_canalarr_from_pickled = False
 preprocessed_datafolder = r"data"
-dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp.tif"
+dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp_filled.tif"
 can_rst_fn = preprocessed_datafolder + r"/canal_clipped_resampled_2.tif"
 peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"
 peat_depth_rst_fn = preprocessed_datafolder + r"/peat_depth.tif"
@@ -71,7 +71,6 @@ catchment_mask[np.where(dem<-10)] = False # -99999.0 is current value of dem for
 # peel the dem. Only when dem is not surrounded by water
 boundary_mask = utilities.peel_raster(dem, catchment_mask)
  
-
 # after peeling, catchment_mask should only be the fruit:
 catchment_mask[boundary_mask] = False
 
@@ -146,7 +145,7 @@ hini = - 0.0 # initial wt wrt surface elevation in meters.
 
 boundary_arr = boundary_mask * (dem - diri_bc) # constant Dirichlet value in the boundaries
 
-ele = dem
+ele = dem[:]
 
 # Get a pickled phi solution (not ele-phi!) computed before without blocks, independently,
 # and use it as initial condition to improve convergence time of the new solution
