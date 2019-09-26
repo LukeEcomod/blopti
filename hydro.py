@@ -127,7 +127,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         # d <0 means tra_to_cut is greater than the other transmissivity, which in turn means that
         # phi is below the impermeable bottom. We allow phi to have those values, but
         # the transmissivity is in those points is equal to zero (as if phi was exactly at the impermeable bottom).
-#        d[d<0] = 1e-5 
+        d[d<0] = 1e-3 # Small non-zero value not to wreck the computation
         
         dcell = fp.CellVariable(mesh=mesh, value=d) # diffusion coefficient, transmissivity. As a cell variable.
         dface = fp.FaceVariable(mesh=mesh, value= dcell.arithmeticFaceValue.value) # THe correct Face variable.
@@ -139,6 +139,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         gwt = phi.value*cmask.value - ele
         
         c = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask, gwt=gwt, h_to_tra_and_C_dict=httd) - sto_to_cut
+        c[c<0] = 1e-3 # Same reasons as for D
         
         ccell = fp.CellVariable(mesh=mesh, value=c) # diffusion coefficient, transmissivity. As a cell variable.        
         return ccell.value
