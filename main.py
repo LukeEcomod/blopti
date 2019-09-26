@@ -93,7 +93,7 @@ sto_to_cut = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask,
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
 n_canals = len(c_to_r_list)
-n_blocks = 5
+n_blocks = 10
 block_height = 0.4 # water level of canal after placing dam.
 
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.

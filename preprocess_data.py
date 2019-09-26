@@ -43,7 +43,7 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn, peat_depth
     can_arr = np.array(can_arr, dtype=int)
     
     # Convert from numpy no data to -9999.0
-    dem[dem[<-10]] = -9999.0
+    dem[dem <-10] = -9999.0
     dem[np.where(np.isnan(dem))] = -9999.0
     dem[dem > 1e20] = -9999.0 # just in case
     
