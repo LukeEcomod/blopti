@@ -159,8 +159,6 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
                 )
         
 
-    plotOptCrossSection = True
-    if plotOptCrossSection:
         y_value=170
         print "first cross-section plot"
         ele_with_can = copy.copy(ele).reshape(ny,nx)
@@ -237,7 +235,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         print d
         
         plotOptCrossSection = True
-        if plotOptCrossSection:
+        if plotOpt:
             print "one more cross-section plot"
             plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section",  nx=nx, ny=ny, label=d)
 
