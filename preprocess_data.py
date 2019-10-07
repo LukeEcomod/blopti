@@ -9,8 +9,20 @@ import numpy as np
 import rasterio
 import scipy.sparse
 
+
+def peat_depth_map(peat_depth_type_arr):
+    peat_depth_arr = np.ones(shape=peat_depth_type_arr.shape)
+    # information from excel
+    peat_depth_arr[peat_depth_type_arr==1] = 2. # depth in meters.
+    peat_depth_arr[peat_depth_type_arr==2] = 2.
+    peat_depth_arr[peat_depth_type_arr==3] = 4.
+    peat_depth_arr[peat_depth_type_arr==4] = 4.
+    peat_depth_arr[peat_depth_type_arr==5] = 8.
+    peat_depth_arr[peat_depth_type_arr==6] = 1.
+    
+    return peat_depth_arr
       
-def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn):
+def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn, peat_depth_rst_fn):
     """
     Deals with issues specific to each  set of input data rasters.
     Output
@@ -21,6 +33,8 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn):
         can_arr = can.read(1)
     with rasterio.open(peat_type_rst_fn) as pt:
         peat_type_arr = pt.read(1)
+    with rasterio.open(peat_depth_rst_fn) as pd:
+        peat_depth_arr = pd.read(1)
         
         
     #Some small changes to get mask of canals: 1 where canals exist, 0 otherwise
@@ -29,22 +43,36 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn):
     can_arr = np.array(can_arr, dtype=int)
     
     # Convert from numpy no data to -9999.0
+    dem[dem <-10] = -9999.0
     dem[np.where(np.isnan(dem))] = -9999.0
+    dem[dem > 1e20] = -9999.0 # just in case
     
     # control nodata values
     peat_type_arr[peat_type_arr < 0] = -1
+    # fill some nodata values to get same size as dem
+    peat_type_arr[(np.where(dem>0.1) and np.where(peat_type_arr <0.1))] = 1.
+    
+    # control nodata values
+    peat_depth_arr[peat_depth_arr < 0] = -1
+    
+    peat_depth_arr = peat_depth_map(peat_depth_arr) # translate number keys to depths
+    
+    # fill some nodata values to get same size as dem
+    peat_depth_arr[(np.where(dem>0.1) and np.where(peat_depth_arr <0.1))] = 1.
+    
     
     # Eliminate rows and columns full of noData values.
     # upper 5 rows, lower 5 rows, right 10 rows
-    dem = dem[7:-7, 3:-13]
-    can_arr = can_arr[7:-7, 3:-13]
-    peat_type_arr = peat_type_arr[7:-7, 3:-13]
+    dem = dem[7:-7, 5:-15]
+    can_arr = can_arr[7:-7, 5:-15]
+    peat_type_arr = peat_type_arr[7:-7, 5:-15]
+    peat_depth_arr = peat_depth_arr[7:-7, 5:-15]
     
-    return can_arr, dem, peat_type_arr
+    return can_arr, dem, peat_type_arr, peat_depth_arr
     
 
 # Build the adjacency matrix up
-def prop_to_neighbours(pixel_coords, rasterized_canals, dem, threshold=0.0):
+def _prop_to_neighbours(pixel_coords, rasterized_canals, dem, threshold=0.0):
     """Given a pixel where a canals exists, return list of canals that it would propagate to.
     Info taken for allowing propagation: DEM height.
     Threshold gives strictness of the propagation condition: if 0, then only strictly increasing water tables are propagated.
@@ -77,7 +105,7 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
         - can_to_raster_list: list. Pixels corresponding to each canal.
     """
 
-    can_arr, dem, _ = read_preprocess_rasters(can_rst_fn, dem_rst_fn, dem_rst_fn)
+    can_arr, dem, _, _ = read_preprocess_rasters(can_rst_fn, dem_rst_fn, dem_rst_fn, dem_rst_fn)
 
     
     # Convert labels of canals to 1,2,3...
@@ -99,10 +127,10 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
 
     c_to_r_list = [0] * n_canals
     for coords, label in np.ndenumerate(rasterized_canals):
-        print(float(coords[0])/float(dem.shape[0])*100.0, " per cent of the reading completed" ) 
+#        print(float(coords[0])/float(dem.shape[0])*100.0, " per cent of the reading completed" ) 
         if rasterized_canals[coords] > 0: # if coords correspond to a canal.
             c_to_r_list[int(label)] = coords # label=0 is not a canal. But do not delete it, otherwise everything would be corrido.
-            propagated_to = prop_to_neighbours(coords, rasterized_canals, dem, threshold=0.0) 
+            propagated_to = _prop_to_neighbours(coords, rasterized_canals, dem, threshold=0.0) 
             for i in propagated_to:
                 matrix[int(label), i] = 1 # adjacency matrix of the directed graph
     
@@ -112,17 +140,17 @@ def gen_can_matrix_and_raster_from_raster(can_rst_fn, dem_rst_fn):
     
     return matrix_csr, rasterized_canals, c_to_r_list
 
-            
-if __name__== '__main__':
-    datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Canal_Block_Data\GIS_files\Stratification_layers"
-    preprocess_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\preprocess"
-    dem_rst_fn = r"\dem_clip_cean.tif"
-    can_rst_fn = r"\can_rst_clipped.tif"
-    
-    cm, cr, c_to_r_list = gen_can_matrix_and_raster_from_raster(can_rst_fn=preprocess_datafolder+can_rst_fn,
-                                                                dem_rst_fn=datafolder+dem_rst_fn)
-    # Pickle outcome!
-#    import pickle
+   # Activate this to run this module as main         
+#if __name__== '__main__':
+#    datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\Canal_Block_Data\GIS_files\Stratification_layers"
+#    preprocess_datafolder = r"C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\Winrock\preprocess"
+#    dem_rst_fn = r"\dem_clip_cean.tif"
+#    can_rst_fn = r"\can_rst_clipped.tif"
+#    
+#    cm, cr, c_to_r_list = gen_can_matrix_and_raster_from_raster(can_rst_fn=preprocess_datafolder+can_rst_fn,
+#                                                                dem_rst_fn=datafolder+dem_rst_fn)
+#    # Pickle outcome!
+##    import pickle
 #    pickle_folder = r"C:\Users\L1817\Winrock"
 #    with open(pickle_folder + r'\50x50_DEM_and_canals.pkl', 'w') as f:
 #        pickle.dump([cm, cr, c_to_r_list], f)

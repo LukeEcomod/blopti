@@ -5,4 +5,8 @@ output/
 preprocess/
 rubbish.py
 data/
+<<<<<<< HEAD
 batch*
+=======
+cprof_stats.dat
+>>>>>>> c0c95e143237e8f8afeafecb59533f41845dab17

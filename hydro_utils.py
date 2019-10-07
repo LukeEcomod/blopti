@@ -129,7 +129,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         d depth of layer midpoint
         dz layer thickness
         pF van Genuchten water retention parameters: ThetaS, ThetaR, alfa, n
-        Ksat saturated hydraulic conductivity in m s-1
+        Ksat saturated hydraulic conductivity in m s-1. K in m/day.
         direction: positive or negative downwards
     """    
     #-------Parameters ---------------------
@@ -153,17 +153,22 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         stoT = list(stoT); gwl= list(gwlT)        
         sto.reverse(); gwl.reverse()
         stoToGwl =interp1d(np.array(stoT), np.array(gwlT), fill_value='extrapolate')
-        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT)
+#        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT) ??? Ask Ari
+        cc = np.gradient(gwlToSto(gwlT), gwlT) # Iñaki
         cc[cc<0.2]=0.2
-        C = interp1d(np.array(gwlT), cc, fill_value='extrapolate')  #storage coefficient function      
-        #C = UnivariateSpline(np.array(gwlT), cc, s=10)                    
-        #C=interS(np.array(gwlT), cc, k=5)
+        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
+        
+        # Iñaki's way:
+        zeta = -z
+        C = interp1d(zeta, wrc(pF, zeta), bounds_error=False, fill_value=(wrc(pF[-1], zeta[-1]), 1.))
+
+        
 
     #import matplotlib.pylab as plt
     #plt.plot(gwlT, cc, 'ro')
     #plt.plot(gwlT, C(gwlT), 'b-')
     #import sys; sys.exit()
-    gwlToSto = interp1d(np.array(gwlT), np.array(stoT), fill_value='extrapolate')
+    gwlToSto = interp1d(np.array(gwlT), np.array(stoT), fill_value='extrapolate') 
     stoT = list(stoT); gwlT= list(gwlT)        
     stoT.reverse(); gwlT.reverse()
     stoToGwl =interp1d(np.array(stoT), np.array(gwlT), fill_value='extrapolate')
@@ -171,13 +176,13 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
     del gwlT, stoT
         
     #----------Transmissivity-------------------
-    K=np.array(Ksat*86400.)   #from m/s to m/day
+    K = np.array(Ksat*86400.)   #from m/s to m/day
     tr =[sum(K[t:]*dz[t:]) for t in range(nLyrs)]        
     if direction=='positive':        
         gwlToTra = interS(z, np.array(tr))            
     else:
         z= list(z);  z.reverse(); tr.reverse()
-        gwlToTra = interS(-np.array(z), np.array(tr))                    
+        gwlToTra = interS(-np.array(z), np.array(tr), k=3, ext='const') # returns limiting value outside interpolation domain 
     del tr
     return gwlToSto, stoToGwl, gwlToTra, C
 
@@ -189,42 +194,82 @@ def peat_map_interp_functions():
     """
     # Soil parameters
     spara ={
-    'gen':{'nLyrs':400, 'dzLyr': 0.5}, # General soil parameters, common to all soil types
+    'gen':{'nLyrs':400, 'dzLyr': 0.05}, # General soil parameters, common to all soil types
     
-    'Water':{'ref': 1, # reference number that appears on the peat type map
-            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':40.0,
+    'Dry agriculture land + shrub':{'ref': 1, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
             'peat type top':'L', 'peat type bottom':['S']},
     
-    'Forest':{'ref': 2, # reference number that appears on the peat type map
-            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':40.0,
+    'Plantation':{'ref': 2, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
             'peat type top':'L', 'peat type bottom':['S']},
     
-    'Secondaryforest-shrub':{'ref': 3, # reference number that appears on the peat type map
-            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':40.0,
+    'Primary swamp forest':{'ref': 3, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
             'peat type top':'L', 'peat type bottom':['S']},
     
-    'Plantation':{'ref': 4, # reference number that appears on the peat type map
-            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':40.0,
+    'Secondary swamp forest':{'ref': 4, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
             'peat type top':'L', 'peat type bottom':['S']},
             
-    'Agriculture':{'ref': 5, # reference number that appears on the peat type map
-            'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':40.0,
+    'Timber/Forest plantation':{'ref': 5, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
             'peat type top':'L', 'peat type bottom':['S']},
              
-    'Wetland':{'ref': 6, # reference number that appears on the peat type map
-        'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-        'vonP bottom': 10, 'Kadjust':4.0,
-        'peat type top':'L', 'peat type bottom':['S']},
+    'Swamp shrub/old growth':{'ref': 6, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
+            'peat type top':'L', 'peat type bottom':['S']},
                
-    'Developed':{'ref': 7, # reference number that appears on the peat type map
-        'vonP top': [5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-        'vonP bottom': 10, 'Kadjust':4.0,
-        'peat type top':'L', 'peat type bottom':['S']},
+    'Bareland':{'ref': 7, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+                
+    'Settlement':{'ref': 8, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+                  
+    'Waterbody':{'ref': 9, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+                 
+    'Secondary mangrove forest':{'ref': 10, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+                                 
+    'Mining':{'ref': 11, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+              
+    'Dry agriculture land':{'ref': 12, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+                            
+    'Paddy field':{'ref': 13, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+                   
+    'Fish Pond':{'ref': 14, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+                 
+    'Swamp':{'ref': 15, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':20.0,
+            'peat type top':'L', 'peat type bottom':['S']},
     }
     
     # Common to all soil types
@@ -233,7 +278,7 @@ def peat_map_interp_functions():
     z = np.cumsum(dz)-dz/2.  # depth of the layer center point, m
     
     # Loop through all soil types to construct dictionary h_to_tra
-    h_to_tra_dict = {}
+    h_to_tra_and_C_dict = {}
     
     for peat_type in [i for i in spara.keys() if i != 'gen']:
         lenvp=len(spara[peat_type]['vonP top'])    
@@ -242,21 +287,23 @@ def peat_map_interp_functions():
         peat_type_top_list = [spara[peat_type]['peat type top']]*lenvp
         lenpt = len(spara[peat_type]['peat type top']); ptype[0:lenpt] = peat_type_top_list  
         pF, Ksat = peat_hydrol_properties(vonP, var='H', ptype=ptype)  # peat hydraulic properties after Päivänen 1973    
-        _, _, hToTra, _ = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
+        _, _, hToTra, C = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
 
-        h_to_tra_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra}
+        h_to_tra_and_C_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra, 'C':C}
 
-    return h_to_tra_dict
+    return h_to_tra_and_C_dict
+
+    
 
 
-def peat_map_h_to_tra(soil_type_mask, gwt, h_to_tra_dict):
+def peat_map_h_to_tra(soil_type_mask, gwt, h_to_tra_and_C_dict):
     """
     Input:
         - soil_type_mask: nparray or flattened nparray of dim the DEM, and peat soil type numbers as elements.
         - gwt: nparray or flattened nparray of gwt.
             If gwt = phi-ele in the hydrology code, then the output is the full depth transmissivity
             If gwt = bottom elevation - ele, then the ouput is the transmissivity to be cut from the above full depth trans.
-        - h_to_tra_dict: dict. Output of peat_map_interp_functions().
+        - h_to_tra_and_C_dict: dict. Output of peat_map_interp_functions().
     
     Output:
         - tra: Flattened nparray of new transmissivities.
@@ -270,12 +317,47 @@ def peat_map_h_to_tra(soil_type_mask, gwt, h_to_tra_dict):
     if soil_type_mask.size != gwt.size:
         raise ValueError('The two should have the same dimensions')
         
-    for soil_type_number, value in h_to_tra_dict.iteritems():
+    if soil_type_mask.max() > max(h_to_tra_and_C_dict.keys()):
+        raise ValueError('More soil types in the raster than in the parameter dictionary h_to_tra_and_C_dict')
+        
+    for soil_type_number, value in h_to_tra_and_C_dict.iteritems():
         indices = np.where(soil_type_mask == soil_type_number)
         if np.shape(indices)[1]>0:
             tra[indices] = value['hToTra'](gwt[indices])
     
     return tra
+
+def peat_map_h_to_sto(soil_type_mask, gwt, h_to_tra_and_C_dict):
+    """
+    Input:
+        - soil_type_mask: nparray or flattened nparray of dim the DEM, and peat soil type numbers as elements.
+        - gwt: nparray or flattened nparray of gwt.
+            If gwt = phi-ele in the hydrology code, then the output is the full depth storage coeff
+            If gwt = bottom elevation - ele, then the ouput is the storage coeff to be cut from the above full depth trans.
+        - h_to_tra_and_C_dict: dict. Output of peat_map_interp_functions().
+    
+    Output:
+        - sto: Flattened nparray of new storage coeffs C.
+    """
+    # MAYBE READ SOIL ARRAY TYPE HERE?
+    soil_type_mask = np.ravel(soil_type_mask) # in case it is not flattened
+    gwt = np.ravel(gwt)
+    
+    sto = np.ones(np.shape(soil_type_mask))*-999 # Initialize output array with nodata entries
+    
+    if soil_type_mask.size != gwt.size:
+        raise ValueError('The two should have the same dimensions')
+    
+    if soil_type_mask.max() > max(h_to_tra_and_C_dict.keys()):
+        raise ValueError('More soil types in the raster than in the parameter dictionary h_to_tra_and_C_dict')
+        
+    for soil_type_number, value in h_to_tra_and_C_dict.iteritems():
+        indices = np.where(soil_type_mask == soil_type_number)
+        if np.shape(indices)[1]>0:
+            sto[indices] = value['C'](gwt[indices])
+    
+    return sto
+
 
 
 
