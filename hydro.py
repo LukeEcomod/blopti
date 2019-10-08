@@ -81,6 +81,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
    
     ele[~catchment_mask] = 0.
     ele = ele.flatten()
+    phi_initial = phi_initial * catchment_mask
     phi_initial = phi_initial.flatten()
 
     if len(ele)!= nx*ny or len(phi_initial) != nx*ny:
@@ -126,7 +127,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         # d <0 means tra_to_cut is greater than the other transmissivity, which in turn means that
         # phi is below the impermeable bottom. We allow phi to have those values, but
         # the transmissivity is in those points is equal to zero (as if phi was exactly at the impermeable bottom).
-#        d[d<0] = 1e-5 
+        d[d<0] = 1e-3 # Small non-zero value not to wreck the computation
         
         dcell = fp.CellVariable(mesh=mesh, value=d) # diffusion coefficient, transmissivity. As a cell variable.
         dface = fp.FaceVariable(mesh=mesh, value= dcell.arithmeticFaceValue.value) # THe correct Face variable.
@@ -138,6 +139,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         gwt = phi.value*cmask.value - ele
         
         c = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask, gwt=gwt, h_to_tra_and_C_dict=httd) - sto_to_cut
+        c[c<0] = 1e-3 # Same reasons as for D
         
         ccell = fp.CellVariable(mesh=mesh, value=c) # diffusion coefficient, transmissivity. As a cell variable.        
         return ccell.value
@@ -177,7 +179,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
                     + source*cmask*drmask_not 
                     - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*np.ravel(boundary_arr)
                     - fp.ImplicitSourceTerm(drmask*largeValue)    + drmask*largeValue*(np.ravel(wt_canal_arr))
-    #                - fp.ImplicitSourceTerm(bmask_not*largeValue) + bmask_not*largeValue*(boundary_arr)
+#                    - fp.ImplicitSourceTerm(bmask_not*largeValue) + bmask_not*largeValue*(boundary_arr)
                     )
             
         elif neumann_bc != None: 
@@ -195,17 +197,15 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         if diri_bc != None:
     #        diri_boundary = fp.CellVariable(mesh=mesh, value= np.ravel(diri_boundary_value(boundary_mask, ele2d, diri_bc)))
             
-            eq = fp.TransientTerm(coeff=1.) == (fp.DiffusionTerm(coeff=D) 
+            eq = fp.TransientTerm(coeff=C) == (fp.DiffusionTerm(coeff=D) 
                         + source*cmask*drmask_not 
                         - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*np.ravel(boundary_arr)
                         - fp.ImplicitSourceTerm(drmask*largeValue)    + drmask*largeValue*(np.ravel(wt_canal_arr))
-        #                - fp.ImplicitSourceTerm(bmask_not*largeValue) + bmask_not*largeValue*(boundary_arr)
+#                        - fp.ImplicitSourceTerm(bmask_not*largeValue) + bmask_not*largeValue*(boundary_arr)
                         )
         elif neumann_bc != None:
             raise NotImplementedError("Neumann BC not implemented yet!") # DOESN'T WORK RIGHT NOW!
-        
-    
-                  
+             
     
     #********************************************************
                                                                   
@@ -214,10 +214,10 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
     days=10 # outmost loop. "timesteps" in fipy manual. Needed due to non-linearity.
     max_sweeps = 1 # inner loop.
     ET = 0. # constant evapotranspoiration mm/day
-    P = 6.0 # constant precipitation
+    P = 6.0 # constant precipitation mm/day
 
-#    source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m. For steadystate!
-    source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m. For steadystate!
+
+    source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m/day. For steadystate! Why for steadystate?
 
     avg_wt_over_time = []
     avg_D_over_time = []
@@ -249,7 +249,6 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
      
         D.setValue(D_value(phi, ele, tra_to_cut, cmask, drmask_not))
         C.setValue(C_value(phi, ele, tra_to_cut, cmask, drmask_not))
- 
             
         for r in range(max_sweeps):
             resOld=res
@@ -265,7 +264,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
             
             if abs(res - resOld) < 1e-7: break # it has reached to the solution of the linear system
             
-        if solve_mode=='transient': #solving in steadystate we remove water only at the very end
+        if solve_mode=='transient': #solving in steadystate will remove water only at the very end
             if remove_ponding_water:                 
                 s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water. This also removes phi in those masked values (for the plot only)
                 phi.setValue(s)                                                # set new values for water table
@@ -304,11 +303,11 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
             )
         
         fig, axes = plt.subplots(nrows=2, ncols=2, figsize=(12,9), dpi=80)
-        x = np.arange(-40,1,0.1)
+        x = np.arange(-21,1,0.1)
         axes[0,0].plot(httd[1]['hToTra'](x),x)
         axes[0,0].set(title='hToTra', ylabel='depth')
-        axes[0,1].plot(httd[1]['hToSto'](x),x)
-        axes[0,1].set(title='hToSto')
+        axes[0,1].plot(httd[1]['C'](x),x)
+        axes[0,1].set(title='C')
         axes[1,0].plot(avg_D_over_time)
         axes[1,0].set(title="avg D over time")
         axes[1,1].plot(avg_wt_over_time)
