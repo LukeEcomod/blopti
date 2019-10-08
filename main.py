@@ -89,6 +89,7 @@ tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask,
                                            gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
 sto_to_cut = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask,
                                            gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
+sto_to_cut = sto_to_cut * catchment_mask.ravel()
 
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
@@ -157,6 +158,7 @@ if retrieve_transient_phi_sol_from_pickled:
     
 else:
     phi_ini = ele + hini #initial h (gwl) in the compartment.
+    phi_ini = phi_ini * catchment_mask
     
     
 

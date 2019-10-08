@@ -162,6 +162,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         y_value=170
         print "first cross-section plot"
         ele_with_can = copy.copy(ele).reshape(ny,nx)
+        ele_with_can = ele_with_can * catchment_mask
         ele_with_can[wt_canal_arr > 0] = wt_canal_arr[wt_canal_arr > 0]
         plot_line_of_peat(ele_with_can, y_value=y_value, title="cross-section", nx=nx, ny=ny, label="ele")
         
@@ -194,7 +195,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         if diri_bc != None:
     #        diri_boundary = fp.CellVariable(mesh=mesh, value= np.ravel(diri_boundary_value(boundary_mask, ele2d, diri_bc)))
             
-            eq = fp.TransientTerm(coeff=5.) == (fp.DiffusionTerm(coeff=D) 
+            eq = fp.TransientTerm(coeff=1.) == (fp.DiffusionTerm(coeff=D) 
                         + source*cmask*drmask_not 
                         - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*np.ravel(boundary_arr)
                         - fp.ImplicitSourceTerm(drmask*largeValue)    + drmask*largeValue*(np.ravel(wt_canal_arr))
@@ -248,8 +249,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
      
         D.setValue(D_value(phi, ele, tra_to_cut, cmask, drmask_not))
         C.setValue(C_value(phi, ele, tra_to_cut, cmask, drmask_not))
-#        D.setValue(100.)
-#            CC.setValue(C(phi.value-ele))    
+ 
             
         for r in range(max_sweeps):
             resOld=res

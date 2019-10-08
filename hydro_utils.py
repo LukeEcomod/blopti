@@ -153,7 +153,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         stoT = list(stoT); gwl= list(gwlT)        
         sto.reverse(); gwl.reverse()
         stoToGwl =interp1d(np.array(stoT), np.array(gwlT), fill_value='extrapolate')
-        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT)
+        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT) ### Isn't it gradient(gwlToSto, gwl)??
         cc[cc<0.2]=0.2
         C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function   
         #C = UnivariateSpline(np.array(gwlT), cc, s=10)                    
@@ -172,7 +172,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         
     #----------Transmissivity-------------------
     K = np.array(Ksat*86400.)   #from m/s to m/day
-    tr =[sum(K[t:]*dz[t:]) for t in range(nLyrs)]        
+    tr =[sum(K[t:] * dz[t:]) for t in range(nLyrs)]        
     if direction=='positive':        
         gwlToTra = interS(z, np.array(tr))            
     else:
@@ -301,7 +301,7 @@ def peat_map_h_to_sto(soil_type_mask, gwt, h_to_tra_and_C_dict):
     for soil_type_number, value in h_to_tra_and_C_dict.iteritems():
         indices = np.where(soil_type_mask == soil_type_number)
         if np.shape(indices)[1]>0:
-            sto[indices] = value['C'](gwt[indices])
+                sto[indices] = value['C'](gwt[indices])
     
     return sto
 
