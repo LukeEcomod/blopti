@@ -319,4 +319,4 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
     resulting_phi = phi.value.reshape(ny,nx)
 
 
-    return dry_peat_volume, resulting_phi, dneg
+    return dry_peat_volume
