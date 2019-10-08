@@ -92,6 +92,7 @@ tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask,
                                            gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
 sto_to_cut = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask,
                                            gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
+sto_to_cut = sto_to_cut * catchment_mask.ravel()
 
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
@@ -160,6 +161,7 @@ if retrieve_transient_phi_sol_from_pickled:
     
 else:
     phi_ini = ele + hini #initial h (gwl) in the compartment.
+    phi_ini = phi_ini * catchment_mask
     
     
 
@@ -172,7 +174,7 @@ for canaln, coords in enumerate(c_to_r_list):
     owt_canal_arr[coords] = oWTcanlist[canaln]
 
 
-dry_peat_volume, wt, dneg = hydro.hydrology('transient', nx, ny, dx, dy, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
+dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
                                                   peat_type_mask=peat_type_mask, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
                                                   diri_bc=diri_bc, neumann_bc = None, plotOpt=False, remove_ponding_water=True)
 
