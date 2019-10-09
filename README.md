@@ -1,6 +1,11 @@
 # Damn Dams
 Canal blocking computation for Winrock.
 
+## ToDo
+  - K(z), C(z), Dupuit Asumptions
+  - Canals flow (DEM)
+  - Mask of peat area (vs soil area) for peat volume compus
+
 ## Installation
 --- Tested on Ubuntu 18.04 LTS---
 1. Create a new environment within Conda with minimal packages:
