@@ -129,7 +129,7 @@ creator.create("Individual", list, fitness=creator.FitnessMin)
 
 
 toolbox = base.Toolbox()
-toolbox.register("attr_int", random.randint, 0, n_canals)
+toolbox.register("attr_int", random.randint, 1, n_canals-1) # 0 and n_canals are excluded for potential problems with those limiting cases.
 toolbox.register("individual", tools.initRepeat, creator.Individual,
                  toolbox.attr_int, n=N_BLOCKS)
 toolbox.register("population", tools.initRepeat, list, toolbox.individual)
@@ -150,7 +150,7 @@ def evalDryPeatVol(individual): # this should be returning dry peat volume in a 
 
 toolbox.register("evaluate", evalDryPeatVol)
 toolbox.register("mate", tools.cxOnePoint) # single point crossover
-toolbox.register("mutate", tools.mutUniformInt, low=0, up=n_canals, indpb=0.1) # replaces individual's attribute with random int
+toolbox.register("mutate", tools.mutUniformInt, low=1, up=n_canals-1, indpb=0.1) # replaces individual's attribute with random int
 toolbox.register("select", tools.selBest) # k best are selected
 
 if __name__ == "__main__":
