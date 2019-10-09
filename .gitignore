@@ -6,3 +6,5 @@ preprocess/
 rubbish.py
 data/
 cprof_stats.dat
+regression-times.ods
+.gitinore
