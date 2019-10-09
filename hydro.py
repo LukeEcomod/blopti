@@ -235,7 +235,6 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
 #        print "timeStep = ", timeStep
 #        print d
         
-        plotOpt = True
         if plotOpt:
            # print "one more cross-section plot"
             plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section",  nx=nx, ny=ny, label=d)
@@ -311,7 +310,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         axes[1,1].plot(avg_wt_over_time)
         axes[1,1].set(title="avg_wt_over_time")
     
-    plt.show()
+        plt.show()
         
 #    change_in_canals = (ele-phi.value).reshape(ny,nx)*(drmask.value.reshape(ny,nx)) - ((ele-H)*drmask.value).reshape(ny,nx)
 #    resulting_phi = phi.value.reshape(ny,nx)

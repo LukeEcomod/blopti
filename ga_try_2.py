@@ -19,12 +19,12 @@ import argparse
 """
 Parse command-line arguments
 """
-parser = argparse.ArgumentParser(description='Run the general code without any optimization algorithm.')
+parser = argparse.ArgumentParser(description='Run GA.')
 
 parser.add_argument('-d','--days', default=10, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
 parser.add_argument('-n','--nopti', default=10, help='(int) Number of iterations of the optimization algorithm. Number of generations in GA. Default=100.', type=int)
-parser.add_argument('-p', '--processes', default=5, help='(int) Number of parallel processes for the optimization', type=int)
+parser.add_argument('-p', '--processes', default=2, help='(int) Number of parallel processes for the optimization', type=int)
 args = parser.parse_args()
 
 DAYS = args.days
@@ -169,7 +169,7 @@ if __name__ == "__main__":
     stats.register("max", np.max)
 
     algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.1, ngen=N_GENERATIONS, 
-                        stats=stats, halloffame=hof, verbose=1)
+                        stats=stats, halloffame=hof, verbose=0)
 
     pool.close()
 
