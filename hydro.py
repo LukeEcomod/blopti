@@ -159,8 +159,6 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
                 )
         
 
-    plotOptCrossSection = True
-    if plotOptCrossSection:
         y_value=170
         print "first cross-section plot"
         ele_with_can = copy.copy(ele).reshape(ny,nx)
@@ -238,8 +236,8 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         print d
         
         plotOptCrossSection = True
-        if plotOptCrossSection:
-            print "one more cross-section plot"
+        if plotOpt:
+           # print "one more cross-section plot"
             plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section",  nx=nx, ny=ny, label=d)
 
         
@@ -256,10 +254,10 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
             res = eq.sweep(var=phi, dt=timeStep) # solve linearization of PDE
 
 
-            print "sum of Ds: ", np.sum(D.value)/1e8 
-            print "average wt: ", np.average(phi.value-ele)
+            #print "sum of Ds: ", np.sum(D.value)/1e8 
+            #print "average wt: ", np.average(phi.value-ele)
             
-            print 'residue diference:    ', res - resOld                
+            #print 'residue diference:    ', res - resOld                
             
             
             if abs(res - resOld) < 1e-7: break # it has reached to the solution of the linear system

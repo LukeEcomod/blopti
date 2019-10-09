@@ -5,6 +5,8 @@ output/
 preprocess/
 rubbish.py
 data/
+batch*
+.gitignore
 cprof_stats.dat
 regression-times.ods
 .gitinore

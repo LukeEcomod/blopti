@@ -176,6 +176,6 @@ if __name__ == "__main__":
     best_ind = tools.selBest(pop, 1)[0]
     print("Best individual of current population is %s, %s" % (best_ind, best_ind.fitness.values))
     print("Best individual ever is %s, %s" % (hof[0],hof[0].fitness.values))
-    with open(r'C:\Users\L1817\Dropbox\PhD\Computation\Indonesia_WaterTable\ForestCarbon\computation\after_21.11.2018\results_ga.txt', 'a') as output_file:
+    with open(r'output/results_ga.txt', 'a') as output_file:
         output_file.write("\n dry_peat_volume = " + str(best_ind.fitness.values) + "    blocked dams:" + str(best_ind) + "   DATE: " + str(time.ctime()) + "   Number of generations = " + str(N_GENERATIONS))
     
