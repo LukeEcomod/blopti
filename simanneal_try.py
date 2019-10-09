@@ -42,7 +42,7 @@ class DryPeatVolumeMinimization(Annealer):
         # Select dam to add
         # Check for prohibited nodes. Minor problem: those points affected by the dam which will be soon removed are also prohibited
         prohibited_node_list = [i for i,_ in enumerate(oWTcanals) if oWTcanals[i] < self.wt_canals[i]]
-        candidate_node_list = [e for e in range(0, n_canals) if e not in prohibited_node_list]
+        candidate_node_list = [e for e in range(1, n_canals) if e not in prohibited_node_list] # remove 0 from the range of possible canals
         random.shuffle(candidate_node_list) # Happens in-place.
         dam_to_add = candidate_node_list[0]
         
@@ -117,7 +117,7 @@ CNM.eliminate_zeros()  # happens in place. Frees disk usage.
 Initial configuration of blocks in canals
 ###########################################
 """
-iDamLocation = np.random.randint(0,n_canals,n_blocks).tolist() # Generate random kvector
+iDamLocation = np.random.randint(1,n_canals,n_blocks).tolist() # Generate random kvector
 iWTcanlist = utilities.place_dams(oWTcanals, surface_canals, block_height, iDamLocation, CNM)
 wt_canals = iWTcanlist
 

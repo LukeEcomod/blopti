@@ -109,7 +109,7 @@ oWTcanlist = [x - canal_water_level for x in srfcanlist]
 """
 Initial configuration of blocks in canals
 """
-iDamLocation = np.random.randint(0,n_canals,n_blocks).tolist() # Generate random kvector
+iDamLocation = np.random.randint(1,n_canals,n_blocks).tolist() # Generate random kvector. 0 is not a good position in c_to_r_list
 iWTcanlist = utilities.place_dams(oWTcanlist, srfcanlist, block_height, iDamLocation, CNM)
 
 
