@@ -77,7 +77,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         - diri_bc: None or float. If None, Dirichlet BC will not be implemented. If float, this number will be the BC.
         - neumann_bc: None or float. If None, Neumann BC will not be implemented. If float, this is the value of grad phi.
     """
-    dneg = []
+#    dneg = []
    
     ele[~catchment_mask] = 0.
     ele = ele.flatten()

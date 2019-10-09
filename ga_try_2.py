@@ -169,7 +169,7 @@ if __name__ == "__main__":
     stats.register("max", np.max)
 
     algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.1, ngen=N_GENERATIONS, 
-                        stats=stats, halloffame=hof, verbose=0)
+                        stats=stats, halloffame=hof, verbose=1)
 
     pool.close()
 
