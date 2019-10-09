@@ -20,7 +20,7 @@ plt.close("all")
 Read general help on main.README.txt
 """
 
-time0 = time.time()
+#time0 = time.time()
 
 #np.random.seed(3)
 
@@ -182,5 +182,5 @@ dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, ele, phi_ini, cat
 """
 Final printings
 """
-timespent = time.time() - time0
-utilities.print_time_in_mins(timespent)
+#timespent = time.time() - time0
+#utilities.print_time_in_mins(timespent)

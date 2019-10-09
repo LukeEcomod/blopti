@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser(description='Run the general code without any o
 
 parser.add_argument('-d','--days', default=10, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
-parser.add_argument('-n','--nopti', default=100, help='(int) Number of iterations of the optimization algorithm. Number of generations in GA. Default=100.', type=int)
+parser.add_argument('-n','--nopti', default=10, help='(int) Number of iterations of the optimization algorithm. Number of generations in GA. Default=100.', type=int)
 parser.add_argument('-p', '--processes', default=5, help='(int) Number of parallel processes for the optimization', type=int)
 args = parser.parse_args()
 
@@ -174,8 +174,8 @@ if __name__ == "__main__":
     pool.close()
 
     best_ind = tools.selBest(pop, 1)[0]
-    print("Best individual of current population is %s, %s" % (best_ind, best_ind.fitness.values))
-    print("Best individual ever is %s, %s" % (hof[0],hof[0].fitness.values))
+#    print("Best individual of current population is %s, %s" % (best_ind, best_ind.fitness.values))
+#    print("Best individual ever is %s, %s" % (hof[0],hof[0].fitness.values))
     with open(r'output/results_ga.txt', 'a') as output_file:
         output_file.write("\n dry_peat_volume = " + str(best_ind.fitness.values) + "    blocked dams:" + str(best_ind) + "   DATE: " + str(time.ctime()) + "   Number of generations = " + str(N_GENERATIONS))
     

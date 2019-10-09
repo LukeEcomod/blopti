@@ -232,10 +232,10 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
 #            timeStep = 2.
 #        if d>100:
 #            timeStep = 1.
-        print "timeStep = ", timeStep
-        print d
+#        print "timeStep = ", timeStep
+#        print d
         
-        plotOptCrossSection = True
+        plotOpt = True
         if plotOpt:
            # print "one more cross-section plot"
             plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section",  nx=nx, ny=ny, label=d)
@@ -314,7 +314,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
     plt.show()
         
 #    change_in_canals = (ele-phi.value).reshape(ny,nx)*(drmask.value.reshape(ny,nx)) - ((ele-H)*drmask.value).reshape(ny,nx)
-    resulting_phi = phi.value.reshape(ny,nx)
+#    resulting_phi = phi.value.reshape(ny,nx)
 
 
     return dry_peat_volume
