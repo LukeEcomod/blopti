@@ -5,11 +5,12 @@ Created on Thu Oct 11 13:13:45 2018
 @author: L1817
 """
 
-import time
+import argparse
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
 #import argparse
+import time
 
 import preprocess_data,  utilities, hydro, hydro_utils
 
@@ -27,14 +28,17 @@ Read general help on main.README.txt
 """
 Parse command-line arguments
 """
-#parser = argparse.ArgumentParser(description='Run the general code without any optimization algorithm.')
-#
-#parser.add_argument('-n','--niter', default=10, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
-#parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
-#args = parser.parse_args()
-#
-#days = args.niter # outtermost loop in fipy. 'timesteps' in fipy manual.
-#nblocks = args.nblocks
+parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
+
+parser.add_argument('-d','--days', default=10, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
+parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
+parser.add_argument('-n','--niter', default=10, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
+args = parser.parse_args()
+
+DAYS = args.days
+N_BLOCKS = args.nblocks
+N_ITER = args.niter
+
 
 
 """
@@ -42,9 +46,7 @@ Read and preprocess data
 """
 retrieve_canalarr_from_pickled = False
 preprocessed_datafolder = r"data"
-
-
-dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp_filled.tif"
+dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp.tif"
 can_rst_fn = preprocessed_datafolder + r"/canal_clipped_resampled_2.tif"
 peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"
 peat_depth_rst_fn = preprocessed_datafolder + r"/peat_depth.tif"
@@ -97,7 +99,6 @@ sto_to_cut = sto_to_cut * catchment_mask.ravel()
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
 n_canals = len(c_to_r_list)
-n_blocks = 10
 block_height = 0.4 # water level of canal after placing dam.
 
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
@@ -109,78 +110,61 @@ oWTcanlist = [x - canal_water_level for x in srfcanlist]
 """
 Initial configuration of blocks in canals
 """
-iDamLocation = np.random.randint(0,n_canals,n_blocks).tolist() # Generate random kvector
-iWTcanlist = utilities.place_dams(oWTcanlist, srfcanlist, block_height, iDamLocation, CNM)
 
 
-
-"""
-Metropolis/Simulated Annealing.
-"""
-# This would be one of the movements of the SimulatedAnnealing
-#wt_canals = utilities.switch_one_dam(oWTcanlist, srfcanlist, iWTcanlist, block_height, iDamLocation, n_canals, CNM)
-
-#time0 = time.time()
-#
-#Tini = 1.0
-#Tfin = 0.0
-#Tstep = 0.09
-#MCsteps = 100
-#WT0canal, E0canal, bpos0, acc, MCfile = opti.SimAnneal('canals',
-#                                               WT0, oWTcanArr, srfcanlist, kvector0Arr, bpos0,
-#                                               prohib_list, ktndict, n_nodes, n_blocks, block_height, n_canals,
-#                                               MCsteps=MCsteps, Tini=Tini, Tfin=Tfin, Tstep=Tstep,
-#                                               T_cooling=True, CNM=CNM, save_to_file=True, save_to_file_freq=0.001)
-
-wt_canals = iWTcanlist
 
 
 """
-#########################################
-                HYDROLOGY
-#########################################
+MonteCarlo
 """
-ny, nx = dem.shape
-dx = 1.; dy = 1. # metres per pixel  
-diri_bc = 0.0
-
-
-hini = - 0.0 # initial wt wrt surface elevation in meters.
-
-boundary_arr = boundary_mask * (dem - diri_bc) # constant Dirichlet value in the boundaries
-
-ele = dem[:]
-
-# Get a pickled phi solution (not ele-phi!) computed before without blocks, independently,
-# and use it as initial condition to improve convergence time of the new solution
-retrieve_transient_phi_sol_from_pickled = False
-if retrieve_transient_phi_sol_from_pickled:
-    with open(r"pickled/transient_phi_sol.pkl", 'r') as f:
-        phi_ini = pickle.load(f)
-    print "transient phi solution loaded as initial condition"
+for i in range(0,N_ITER):
     
-else:
-    phi_ini = ele + hini #initial h (gwl) in the compartment.
-    phi_ini = phi_ini * catchment_mask
+    damLocation = np.random.randint(1, n_canals, N_BLOCKS).tolist() # Generate random kvector. 0 is not a good position in c_to_r_list
+    wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, block_height, damLocation, CNM)
+    """
+    #########################################
+                    HYDROLOGY
+    #########################################
+    """
+    ny, nx = dem.shape
+    dx = 1.; dy = 1. # metres per pixel  
+    diri_bc = 0.0
     
     
-
-wt_canal_arr = np.zeros((ny,nx)) # (nx,ny) array with wt canal height in corresponding nodes
-owt_canal_arr = np.zeros((ny,nx)) # checking purposes
-for canaln, coords in enumerate(c_to_r_list):
-    if canaln == 0: 
-        continue # because c_to_r_list begins at 1
-    wt_canal_arr[coords] = wt_canals[canaln] 
-    owt_canal_arr[coords] = oWTcanlist[canaln]
-
-
-dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
-                                                  peat_type_mask=peat_type_mask, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
-                                                  diri_bc=diri_bc, neumann_bc = None, plotOpt=False, remove_ponding_water=True)
-
-
-"""
-Final printings
-"""
-#timespent = time.time() - time0
-#utilities.print_time_in_mins(timespent)
+    hini = - 0.0 # initial wt wrt surface elevation in meters.
+    
+    boundary_arr = boundary_mask * (dem - diri_bc) # constant Dirichlet value in the boundaries
+    
+    ele = dem[:]
+    
+    # Get a pickled phi solution (not ele-phi!) computed before without blocks, independently,
+    # and use it as initial condition to improve convergence time of the new solution
+    retrieve_transient_phi_sol_from_pickled = False
+    if retrieve_transient_phi_sol_from_pickled:
+        with open(r"pickled/transient_phi_sol.pkl", 'r') as f:
+            phi_ini = pickle.load(f)
+        print "transient phi solution loaded as initial condition"
+        
+    else:
+        phi_ini = ele + hini #initial h (gwl) in the compartment.
+        phi_ini = phi_ini * catchment_mask
+        
+        
+    
+    wt_canal_arr = np.zeros((ny,nx)) # (nx,ny) array with wt canal height in corresponding nodes
+    owt_canal_arr = np.zeros((ny,nx)) # checking purposes
+    for canaln, coords in enumerate(c_to_r_list):
+        if canaln == 0: 
+            continue # because c_to_r_list begins at 1
+        wt_canal_arr[coords] = wt_canals[canaln] 
+        owt_canal_arr[coords] = oWTcanlist[canaln]
+    
+    
+    dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
+                                                      peat_type_mask=peat_type_mask, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
+                                                      diri_bc=diri_bc, neumann_bc = None, plotOpt=False, remove_ponding_water=True)
+    """
+    Final printings
+    """
+    with open(r'output/results_mc.txt', 'a') as output_file:
+        output_file.write("\n" + str(i) + "    " + str(dry_peat_volume) + "    " + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(time.ctime()))
