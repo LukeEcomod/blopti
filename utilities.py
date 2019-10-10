@@ -180,9 +180,9 @@ def place_dams(originalWT, srfc, block_height, dams_to_add, CNM):
         return wt
     
     wt = copy.deepcopy(originalWT) # Always start with original wt.
-      
-    if type(dams_to_add) != list:
-        print "WT_update: canals_to_add should have type list"
+    
+#    if type(dams_to_add) != list:
+#        print("dams_to_add needs to be list type")
     
     for add_can in dams_to_add:
         wt = addDam(wt, srfc, block_height, add_can, CNM)

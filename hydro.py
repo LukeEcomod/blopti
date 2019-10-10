@@ -77,7 +77,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         - diri_bc: None or float. If None, Dirichlet BC will not be implemented. If float, this number will be the BC.
         - neumann_bc: None or float. If None, Neumann BC will not be implemented. If float, this is the value of grad phi.
     """
-    dneg = []
+#    dneg = []
    
     ele[~catchment_mask] = 0.
     ele = ele.flatten()
@@ -157,13 +157,11 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
                 raster3=ele.reshape(ny,nx),
                 raster4=(ele-phi.value).reshape(ny,nx)
                 )
-        
 
-    plotOptCrossSection = True
-    if plotOptCrossSection:
         y_value=270
         print "first cross-section plot"
         ele_with_can = copy.copy(ele).reshape(ny,nx)
+        ele_with_can = ele_with_can * catchment_mask
         ele_with_can[wt_canal_arr > 0] = wt_canal_arr[wt_canal_arr > 0]
         plot_line_of_peat(ele_with_can, y_value=y_value, title="cross-section", nx=nx, ny=ny, label="ele")
         
@@ -233,12 +231,11 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
 #            timeStep = 2.
 #        if d>100:
 #            timeStep = 1.
-        print "timeStep = ", timeStep
-        print d
+#        print "timeStep = ", timeStep
+#        print d
         
-        plotOptCrossSection = True
-        if plotOptCrossSection:
-            print "one more cross-section plot"
+        if plotOpt:
+           # print "one more cross-section plot"
             plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section",  nx=nx, ny=ny, label=d)
 
         
@@ -247,9 +244,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         phi.updateOld() 
      
         D.setValue(D_value(phi, ele, tra_to_cut, cmask, drmask_not))
-#        C.setValue(C_value(phi, ele, tra_to_cut, cmask, drmask_not))
-#        D.setValue(100.)
-#            CC.setValue(C(phi.value-ele))    
+        C.setValue(C_value(phi, ele, tra_to_cut, cmask, drmask_not))
             
         for r in range(max_sweeps):
             resOld=res
@@ -257,10 +252,10 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
             res = eq.sweep(var=phi, dt=timeStep) # solve linearization of PDE
 
 
-            print "sum of Ds: ", np.sum(D.value)/1e8 
-            print "average wt: ", np.average(phi.value-ele)
+            #print "sum of Ds: ", np.sum(D.value)/1e8 
+            #print "average wt: ", np.average(phi.value-ele)
             
-            print 'residue diference:    ', res - resOld                
+            #print 'residue diference:    ', res - resOld                
             
             
             if abs(res - resOld) < 1e-7: break # it has reached to the solution of the linear system
@@ -314,10 +309,10 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
         axes[1,1].plot(avg_wt_over_time)
         axes[1,1].set(title="avg_wt_over_time")
     
-    plt.show()
+        plt.show()
         
 #    change_in_canals = (ele-phi.value).reshape(ny,nx)*(drmask.value.reshape(ny,nx)) - ((ele-H)*drmask.value).reshape(ny,nx)
-    resulting_phi = phi.value.reshape(ny,nx)
+#    resulting_phi = phi.value.reshape(ny,nx)
 
 
-    return dry_peat_volume, resulting_phi, dneg
+    return dry_peat_volume
