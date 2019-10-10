@@ -39,7 +39,7 @@ DAYS = args.days
 N_BLOCKS = args.nblocks
 N_ITER = args.niter
 
-
+#N_ITER = 1
 
 """
 Read and preprocess data
@@ -106,14 +106,6 @@ canal_water_level = 1.2
 oWTcanlist = [x - canal_water_level for x in srfcanlist]
 
 
-
-"""
-Initial configuration of blocks in canals
-"""
-
-
-
-
 """
 MonteCarlo
 """
@@ -148,16 +140,12 @@ for i in range(0,N_ITER):
     else:
         phi_ini = ele + hini #initial h (gwl) in the compartment.
         phi_ini = phi_ini * catchment_mask
-        
-        
-    
+           
     wt_canal_arr = np.zeros((ny,nx)) # (nx,ny) array with wt canal height in corresponding nodes
-    owt_canal_arr = np.zeros((ny,nx)) # checking purposes
     for canaln, coords in enumerate(c_to_r_list):
         if canaln == 0: 
             continue # because c_to_r_list begins at 1
         wt_canal_arr[coords] = wt_canals[canaln] 
-        owt_canal_arr[coords] = oWTcanlist[canaln]
     
     
     dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
