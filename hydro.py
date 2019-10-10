@@ -64,7 +64,7 @@ def plot_line_of_peat(raster, y_value, title, nx, ny, label):
         
     
 
-def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_canal_arr, boundary_arr,
+def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask, wt_canal_arr, boundary_arr,
               peat_type_mask, httd, tra_to_cut, sto_to_cut, 
               diri_bc=0.9, neumann_bc = None, plotOpt=False, remove_ponding_water=True):
     """
@@ -208,7 +208,6 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
                                                                   
     d=0   # day counter
     timeStep = 1.                                                            
-    days=10 # outmost loop. "timesteps" in fipy manual. Needed due to non-linearity.
     max_sweeps = 1 # inner loop.
     ET = 0. # constant evapotranspoiration mm/day
     P = 6.0 # constant precipitation mm/day
