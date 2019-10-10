@@ -192,83 +192,84 @@ def peat_map_interp_functions():
         h_to_tra_dict is the interp. func. that maps gwt to transmissivity for the whole saturated depth.
         tr_cut_dict 
     """
+    Kadjust = 1.
     # Soil parameters
     spara ={
     'gen':{'nLyrs':400, 'dzLyr': 0.05}, # General soil parameters, common to all soil types
     
     'Dry agriculture land + shrub':{'ref': 1, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
     
     'Plantation':{'ref': 2, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
     
     'Primary swamp forest':{'ref': 3, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
     
     'Secondary swamp forest':{'ref': 4, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
             
     'Timber/Forest plantation':{'ref': 5, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
              
     'Swamp shrub/old growth':{'ref': 6, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                
     'Bareland':{'ref': 7, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                 
     'Settlement':{'ref': 8, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                   
     'Waterbody':{'ref': 9, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                  
     'Secondary mangrove forest':{'ref': 10, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                                  
     'Mining':{'ref': 11, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
               
     'Dry agriculture land':{'ref': 12, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                             
     'Paddy field':{'ref': 13, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                    
     'Fish Pond':{'ref': 14, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                  
     'Swamp':{'ref': 15, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
-            'vonP bottom': 10, 'Kadjust':20.0,
+            'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
     }
     

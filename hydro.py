@@ -161,7 +161,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, ele, phi_initial, catchment_mask, wt_c
 
     plotOptCrossSection = True
     if plotOptCrossSection:
-        y_value=170
+        y_value=270
         print "first cross-section plot"
         ele_with_can = copy.copy(ele).reshape(ny,nx)
         ele_with_can[wt_canal_arr > 0] = wt_canal_arr[wt_canal_arr > 0]
