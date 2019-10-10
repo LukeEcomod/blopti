@@ -155,4 +155,4 @@ for i in range(0,N_ITER):
     Final printings
     """
     with open(r'output/results_mc.txt', 'a') as output_file:
-        output_file.write("\n" + str(i) + "    " + str(dry_peat_volume) + "    " + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(time.ctime()))
+        output_file.write("\n" + str(i) + "    " + str(dry_peat_volume) + "    " + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(DAYS) + "    " + str(time.ctime()))
