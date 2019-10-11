@@ -2,9 +2,12 @@
 Canal blocking computation for Winrock.
 
 ## ToDo
-  - K(z), C(z), Dupuit Asumptions
-  - Canals flow (DEM)
+
+  - Check new dataset Stratification3
+  - Monotonical canal flow
+  - K(z) and C(z) and the Dupuit assumptions
   - Mask of peat area (vs soil area) for peat volume compus
+
 
 ## Installation
 --- Tested on Ubuntu 18.04 LTS---
