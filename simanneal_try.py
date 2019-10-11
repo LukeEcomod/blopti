@@ -209,5 +209,5 @@ Final printings and plots
 #dry_peat_volume = hydro.hydrology(nx, ny, dx, dy, dt, ele, Hinitial, catchment_mask,
 #                                  wt_canal_arr, value_for_masked= 0.9, diri_bc=None, neumann_bc = 0.0, plotOpt=True)
 
-with open(r'output/results_sa.txt', 'a') as output_file:
+with open(r'output/results_sa_2.txt', 'a') as output_file:
         output_file.write("\n" + str(dry_peat_volume) + "    " + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(DAYS) + "    " + str(time.ctime()))
