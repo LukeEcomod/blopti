@@ -8,7 +8,7 @@ Created on Fri Oct 11 09:40:13 2019
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-
+import seaborn as sns
 """
  Read
 """
@@ -26,6 +26,7 @@ sa_df = pd.read_csv(fname_sa, delim_whitespace=True, header=None, names=colnames
 """
  Get info out
 """
+mc_df = mc_df[mc_df.i != 0]
 number_dams = (2,4,6,8,10,12,14,16,18,20)
 mean_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].mean() for i in number_dams]
 max_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].max() for i in number_dams]
@@ -44,3 +45,11 @@ ax.scatter(x=10, y=value_sa)
 
 fname_fig = r'results_plot.png'
 plt.savefig(fname_fig)
+
+
+plt.figure()
+sns.set(style="whitegrid", palette="pastel", color_codes=True)
+
+# Draw a nested violinplot and split the violins for easier comparison
+sns.violinplot(x=mc_df.ndams, y=mc_df.dry_peat_vol,  inner="quart")
+sns.despine(left=True)
