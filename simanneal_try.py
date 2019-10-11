@@ -74,9 +74,9 @@ Parse command-line arguments
 """
 parser = argparse.ArgumentParser(description='Run simulated annealing.')
 
-parser.add_argument('-d','--days', default=10, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
+parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
-parser.add_argument('-n','--niter', default=10, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
+parser.add_argument('-n','--niter', default=3, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 
 DAYS = args.days
@@ -120,7 +120,7 @@ catchment_mask[np.where(dem<-10)] = False # -99999.0 is current value of dem for
 boundary_mask = utilities.peel_raster(dem, catchment_mask)
  
 # after peeling, catchment_mask should only be the fruit:
-catchment_mask[boundary_mask] = False
+#catchment_mask[boundary_mask] = False
 
 # soil types and soil physical properties and soil depth:
 peat_type_mask = peat_type_arr * catchment_mask
