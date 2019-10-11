@@ -1,7 +1,6 @@
 Canal_Block_Data/
 reports/
 *.pyc
-output/
 preprocess/
 rubbish.py
 data/
