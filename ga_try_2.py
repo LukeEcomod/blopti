@@ -177,5 +177,5 @@ if __name__ == "__main__":
 #    print("Best individual of current population is %s, %s" % (best_ind, best_ind.fitness.values))
 #    print("Best individual ever is %s, %s" % (hof[0],hof[0].fitness.values))
     with open(r'output/results_ga.txt', 'a') as output_file:
-        output_file.write("\n" + str(best_ind.fitness.values) + "    " + str(N_BLOCKS) + "    " + str(N_GENERATIONS) + "    " + str(DAYS) + "    " + str(time.ctime()))
+        output_file.write("\n" + str(best_ind.fitness.values) + "    " + str(N_BLOCKS) + "    " + str(N_GENERATIONS) + "    " + str(DAYS) + "    " + str(time.ctime()) + "    " + str(hof[0]))
 
