@@ -21,10 +21,12 @@ fname_ga = r'results_ga.txt'
 fname_sa = r'results_sa_2.txt'
 
 colnames = ['i', 'dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr' ]
-rename_cols = {'i':'dry_peat_vol', 'dry_peat_vol':'ndams', 'ndams':'niter', 'niter':'days', 'days':'day_week', 'day_week':'month', 'month':'day_month', 'day_month':'time', 'time':'yr' }
+rename_cols_sa = {'i':'dry_peat_vol', 'dry_peat_vol':'ndams', 'ndams':'niter', 'niter':'days', 'days':'day_week', 'day_week':'month', 'month':'day_month', 'day_month':'time', 'time':'yr' }
+colnames_ga = {'dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr', 'blocks', 'a', 'b', 'c'}
+rename_cols_ga = {'day_month':'dry_peat_vol', 'niter':'ndams', 'c': 'niter', 'b':'days', 'blocks':'day_week', 'day_week':'month', 'days':'day_month', 'month':'time', 'ndams':'yr', 'a': 'b1', 'time':'b2', 'yr':'b3', 'dry_peat_vol':'b4'}
 
 mc_df = pd.read_csv(fname_mc, delim_whitespace=True, header=None, names=colnames)
-ga_df = pd.read_csv(fname_ga, delim_whitespace=True, header=None, names=colnames)
+ga_df = pd.read_csv(fname_ga, delim_whitespace=True, header=None, names=colnames_ga)
 sa_df = pd.read_csv(fname_sa, delim_whitespace=True, header=None, names=colnames)
 
 """
@@ -40,8 +42,11 @@ mean_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].mean()/dry_peat_vol_no_dams f
 max_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams for i in number_dams]
 min_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams for i in number_dams]
 
-sa_df = sa_df.rename(columns=rename_cols)
+sa_df = sa_df.rename(columns=rename_cols_sa)
 sa_df.dry_peat_vol = sa_df.dry_peat_vol/dry_peat_vol_no_dams
+
+ga_df = ga_df.rename(columns=rename_cols_ga)
+ga_df.dry_peat_vol = ga_df.dry_peat_vol/dry_peat_vol_no_dams
 
 
 """
@@ -54,6 +59,7 @@ ax.fill_between(number_dams, max_mc, min_mc, facecolor='red', alpha=0.5 )
 
 
 ax.scatter(x=sa_df.ndams.to_numpy(), y=sa_df.dry_peat_vol.to_numpy())
+ax.scatter(x=ga_df.ndams.to_numpy(), y=ga_df.dry_peat_vol.to_numpy())
 
 fname_fig = r'results_plot.png'
 plt.savefig(fname_fig)
