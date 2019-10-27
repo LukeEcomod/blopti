@@ -30,7 +30,9 @@ sa_df = pd.read_csv(fname_sa, delim_whitespace=True, header=None, names=colnames
 """
  Get info out
 """
+
 dry_peat_vol_no_dams = 40191.730578848255 # normalization value
+
 
 mc_df = mc_df[mc_df.i != 0]
 number_dams = (2,4,6,8,10,12,14,16,18,20)
@@ -41,6 +43,7 @@ min_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams for
 sa_df = sa_df.rename(columns=rename_cols)
 sa_df.dry_peat_vol = sa_df.dry_peat_vol/dry_peat_vol_no_dams
 
+
 """
  Plot
 """
@@ -48,6 +51,8 @@ sa_df.dry_peat_vol = sa_df.dry_peat_vol/dry_peat_vol_no_dams
 fig, ax = plt.subplots(1)
 ax.plot(number_dams, mean_mc)
 ax.fill_between(number_dams, max_mc, min_mc, facecolor='red', alpha=0.5 )
+
+
 ax.scatter(x=sa_df.ndams.to_numpy(), y=sa_df.dry_peat_vol.to_numpy())
 
 fname_fig = r'results_plot.png'
@@ -58,5 +63,7 @@ sns.set(style="whitegrid", palette="pastel", color_codes=True)
 
 # Draw a nested violinplot and split the violins for easier comparison
 sns.violinplot(x=mc_df.ndams, y=mc_df.dry_peat_vol/dry_peat_vol_no_dams,  inner="quart")
-sns.scatterplot(x='ndams', y='dry_peat_vol', data= sa_df) # Somehow I cannot get this right...
-#sns.despine(left=True)
+
+sns.despine(left=True)
+
+plt.show()
