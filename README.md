@@ -7,6 +7,7 @@ Canal blocking computation for Winrock.
   - Monotonical canal flow
   - K(z) and C(z) and the Dupuit assumptions
   - Mask of peat area (vs soil area) for peat volume compus
+  - Does the optimization change with a change in general canal water level? How?
 
 
 ## Installation
