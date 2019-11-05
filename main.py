@@ -40,7 +40,7 @@ N_ITER = args.niter
 Read and preprocess data
 """
 retrieve_canalarr_from_pickled = False
-preprocessed_datafolder = r"data"
+preprocessed_datafolder = r"data_copy"
 dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp.tif"
 can_rst_fn = preprocessed_datafolder + r"/canal_clipped_resampled_2.tif"
 peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"
@@ -145,7 +145,7 @@ for i in range(0,N_ITER):
     
     dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
                                                       peat_type_mask=peat_type_mask, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
-                                                      diri_bc=diri_bc, neumann_bc = None, plotOpt=True, remove_ponding_water=True)
+                                                      diri_bc=diri_bc, neumann_bc = None, plotOpt=False, remove_ponding_water=True)
     """
     Final printings
     """
