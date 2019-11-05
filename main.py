@@ -40,7 +40,7 @@ N_ITER = args.niter
 Read and preprocess data
 """
 retrieve_canalarr_from_pickled = False
-preprocessed_datafolder = r"data"
+preprocessed_datafolder = r"data_copy"
 dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp.tif"
 can_rst_fn = preprocessed_datafolder + r"/canal_clipped_resampled_2.tif"
 peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"

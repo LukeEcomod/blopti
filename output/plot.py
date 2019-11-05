@@ -37,7 +37,7 @@ dry_peat_vol_no_dams = 40191.730578848255 # normalization value
 
 
 mc_df = mc_df[mc_df.i != 0]
-number_dams = (2,4,6,8,10,12,14,16,18,20)
+number_dams = (2,4,6,8,10,12,14,16,18,20, 30, 40, 50, 60)
 mean_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].mean()/dry_peat_vol_no_dams for i in number_dams]
 max_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams for i in number_dams]
 min_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams for i in number_dams]
