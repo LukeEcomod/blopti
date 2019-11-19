@@ -3,11 +3,12 @@ Canal blocking computation for Winrock.
 
 ## ToDo
 
-  - Check new dataset Stratification3
-  - Monotonical canal flow
+  - Check and put to work new dataset Stratification4
+  - Monotonical canal flow (maybe solved with Strat4?)
   - K(z) and C(z) and the Dupuit assumptions
   - Mask of peat area (vs soil area) for peat volume compus
   - Does the optimization change with a change in general canal water level? How?
+  - Hand made blocks with level curves
 
 
 ## Installation
