@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='Run hydro without any optimization
 
 parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
-parser.add_argument('-n','--niter', default=2, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
+parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 
 DAYS = args.days
@@ -40,11 +40,20 @@ N_ITER = args.niter
 Read and preprocess data
 """
 retrieve_canalarr_from_pickled = False
-preprocessed_datafolder = r"data"
-dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp.tif"
-can_rst_fn = preprocessed_datafolder + r"/canal_clipped_resampled_2.tif"
-peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"
-peat_depth_rst_fn = preprocessed_datafolder + r"/peat_depth.tif"
+
+""" Stratification 2 data version. Remove in the future"""
+#preprocessed_datafolder = r"data/Strat2"
+#dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp.tif"
+#can_rst_fn = preprocessed_datafolder + r"/canal_clipped_resampled_2.tif"
+#peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"
+#peat_depth_rst_fn = preprocessed_datafolder + r"/peat_depth.tif"
+
+"""Stratification 4  save this!"""
+preprocessed_datafolder = r"data/Strat4"
+dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
+can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
+peat_type_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif"
+peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif"
 
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
@@ -76,7 +85,7 @@ boundary_mask = utilities.peel_raster(dem, catchment_mask)
 
 # soil types and soil physical properties and soil depth:
 peat_type_mask = peat_type_arr * catchment_mask
-peat_bottom_elevation = - peat_depth_arr * catchment_mask # meters with respect to dem surface. Should be negative!
+peat_bottom_elevation = peat_depth_arr * catchment_mask # meters with respect to dem surface. Should be negative!
 
 
 h_to_tra_and_C_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary

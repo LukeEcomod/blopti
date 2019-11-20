@@ -66,7 +66,7 @@ def plot_line_of_peat(raster, y_value, title, nx, ny, label):
 
 def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask, wt_canal_arr, boundary_arr,
               peat_type_mask, httd, tra_to_cut, sto_to_cut, 
-              diri_bc=0.9, neumann_bc = None, plotOpt=False, remove_ponding_water=True):
+              diri_bc=0.0, neumann_bc = None, plotOpt=False, remove_ponding_water=True):
     """
     INPUT:
         - ele: (nx,ny) sized NumPy array. Elevation in m above c.r.p.
@@ -106,9 +106,10 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     
     # *** drain mask or canal mask
     dr = np.array(wt_canal_arr, dtype=bool)
+    dr[np.array(wt_canal_arr, dtype=bool) * np.array(boundary_arr, dtype=bool)] = False # Pixels cannot be canals and boundaries at the same time. Everytime a conflict appears, boundaries win. This overwrites any canal water level info if the canal is in the boundary.
     drmask=fp.CellVariable(mesh=mesh, value=np.ravel(dr))
     drmask_not = fp.CellVariable(mesh=mesh, value= np.array(~ drmask.value, dtype = int))      # Complementary of the drains mask, but with ints {0,1}
-    
+
     
     # mask away unnecesary stuff
 #    phi.setValue(np.ravel(H)*cmask.value)
@@ -193,7 +194,6 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     elif solve_mode == 'transient':
         if diri_bc != None:
     #        diri_boundary = fp.CellVariable(mesh=mesh, value= np.ravel(diri_boundary_value(boundary_mask, ele2d, diri_bc)))
-            
             eq = fp.TransientTerm(coeff=C) == (fp.DiffusionTerm(coeff=D) 
                         + source*cmask*drmask_not 
                         - fp.ImplicitSourceTerm(cmask_not*largeValue) + cmask_not*largeValue*np.ravel(boundary_arr)
@@ -201,7 +201,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
 #                        - fp.ImplicitSourceTerm(bmask_not*largeValue) + bmask_not*largeValue*(boundary_arr)
                         )
         elif neumann_bc != None:
-            raise NotImplementedError("Neumann BC not implemented yet!") # DOESN'T WORK RIGHT NOW!
+            raise NotImplementedError("Neumann BC not implemented yet!")
              
     
     #********************************************************
