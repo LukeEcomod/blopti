@@ -41,13 +41,13 @@ def big_4_raster_plot(title, raster1, raster2, raster3, raster4):
         plt.colorbar(b, cax=cax2)
         axes1[0,1].set(title="canal water level")
         
-        c = axes1[0,0].imshow(raster3, cmap='viridis')
+        c = axes1[0,0].imshow(raster3, cmap='hot')
         ax3_divider = make_axes_locatable(axes1[0,0])
         cax3 = ax3_divider.append_axes('right', size='7%', pad='2%')
         plt.colorbar(c, cax=cax3)
         axes1[0,0].set(title="DEM")
         
-        d = axes1[1,1].imshow(raster4, cmap='pink')
+        d = axes1[1,1].imshow(raster4, cmap='cividis')
         ax4_divider = make_axes_locatable(axes1[1,1])
         cax4 = ax4_divider.append_axes('right', size='7%', pad='2%')
         plt.colorbar(d, cax=cax4)
@@ -81,7 +81,8 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
    
     ele[~catchment_mask] = 0.
     ele = ele.flatten()
-    phi_initial = phi_initial * catchment_mask
+    phi_initial = (phi_initial + 0.0 * np.zeros((ny,nx))) * catchment_mask
+#    phi_initial = phi_initial * catchment_mask
     phi_initial = phi_initial.flatten()
 
     if len(ele)!= nx*ny or len(phi_initial) != nx*ny:
@@ -147,7 +148,8 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
 
     D = fp.FaceVariable(mesh=mesh, value=D_value(phi, ele, tra_to_cut, cmask, drmask_not)) # THe correct Face variable.
     C = fp.CellVariable(mesh=mesh, value=C_value(phi, ele, sto_to_cut, cmask, drmask_not)) # differential water capacity
-        
+    
+   
     largeValue=1e20                                                     # value needed in implicit source term to apply internal boundaries
     
     
@@ -181,7 +183,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
                     )
             
         elif neumann_bc != None: 
-            raise NotImplementedError("Neumann BC not implemented yet!") # DOESN'T WORK RIGHT NOW!
+            raise NotImplementedError("Neumann BC not implemented yet!")
             cmask_face = fp.FaceVariable(mesh=mesh, value=np.array(cmask.arithmeticFaceValue.value, dtype=bool))
             D[cmask_face.value] = 0.
             eq = 0. == (fp.DiffusionTerm(coeff=D) + source*cmask*drmask_not
@@ -206,8 +208,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     
     #********************************************************
                                                                   
-    d=0   # day counter
-    timeStep = 1.                                                            
+    timeStep = 1.0                                                            
     max_sweeps = 1 # inner loop.
     ET = 0. # constant evapotranspoiration mm/day
     P = 6.0 # constant precipitation mm/day
@@ -222,6 +223,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
                                                              
     #********Finite volume computation******************
     for d in range(days):
+        print d
 #        if d>2:
 #            timeStep = 5.
 #        if d > 20:
@@ -263,14 +265,20 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
             if remove_ponding_water:                 
                 s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water. This also removes phi in those masked values (for the plot only)
                 phi.setValue(s)                                                # set new values for water table
-
+        
+        if plotOpt: # only for report. Delete afterwards
+            ras=(ele-phi.value).reshape(ny,nx)
+            plt.figure()
+            plt.title(d)
+            plt.axis('off')
+            plt.imshow(ras[360:435, 80:130], cmap='cividis')
+        
         
         if (D.value<0.).any():
                 print "Some value in D is negative!"
 
         # For some plots
         avg_wt_over_time.append(np.average(phi.value-ele))
-        avg_D_over_time.append(np.average(D.value))
         
     if solve_mode=='steadystate': #solving in steadystate we remove water only at the very end
         if remove_ponding_water:                 
@@ -303,8 +311,8 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         axes[0,0].set(title='hToTra', ylabel='depth')
         axes[0,1].plot(httd[1]['C'](x),x)
         axes[0,1].set(title='C')
-        axes[1,0].plot(avg_D_over_time)
-        axes[1,0].set(title="avg D over time")
+        axes[1,0].plot()
+        axes[1,0].set(title="Nothing")
         axes[1,1].plot(avg_wt_over_time)
         axes[1,1].set(title="avg_wt_over_time")
     

@@ -154,10 +154,10 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         sto.reverse(); gwl.reverse()
         stoToGwl =interp1d(np.array(stoT), np.array(gwlT), fill_value='extrapolate')
 
-#        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT) ??? Ask Ari
-        cc = np.gradient(gwlToSto(gwlT), gwlT) # Iñaki
+        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT) # ??? Ask Ari
+#        cc = np.gradient(gwlToSto(gwlT), gwlT) # Iñaki
         cc[cc<0.2]=0.2
-        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
+#        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
         
         # Iñaki's way:
         zeta = -z
@@ -185,7 +185,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         z= list(z);  z.reverse(); tr.reverse()
         gwlToTra = interS(-np.array(z), np.array(tr), k=3, ext='const') # returns limiting value outside interpolation domain 
     del tr
-    return gwlToSto, stoToGwl, gwlToTra, C
+    return gwlToSto, K, gwlToTra, C
 
 def peat_map_interp_functions():
     """
@@ -297,11 +297,11 @@ def peat_map_interp_functions():
         peat_type_top_list = [spara[peat_type]['peat type top']]*lenvp
         lenpt = len(spara[peat_type]['peat type top']); ptype[0:lenpt] = peat_type_top_list  
         pF, Ksat = peat_hydrol_properties(vonP, var='H', ptype=ptype)  # peat hydraulic properties after Päivänen 1973    
-        _, _, hToTra, C = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
+        _, K, hToTra, C = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
 
         h_to_tra_and_C_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra, 'C':C}
 
-    return h_to_tra_and_C_dict
+    return h_to_tra_and_C_dict, K
 
     
 

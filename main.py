@@ -26,8 +26,8 @@ Parse command-line arguments
 """
 parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
 
-parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
-parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
+parser.add_argument('-d','--days', default=4, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
+parser.add_argument('-b','--nblocks', default=100, help='(int) Number of blocks to locate. Default=5.', type=int)
 parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 
@@ -48,7 +48,7 @@ retrieve_canalarr_from_pickled = False
 #peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"
 #peat_depth_rst_fn = preprocessed_datafolder + r"/peat_depth.tif"
 
-"""Stratification 4  save this!"""
+"""Stratification 4  keep this!"""
 preprocessed_datafolder = r"data/Strat4"
 dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
@@ -71,24 +71,32 @@ else:
     
 _ , dem, peat_type_arr, peat_depth_arr = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn, peat_depth_rst_fn)
 
+
+print(">>>>> WARNING, OVERWRITING PEAT DEPTH")
+peat_depth_arr[peat_depth_arr < 2.] = 2.
+
 print("rasters read and preprocessed from file")
 
 # catchment mask
 catchment_mask = np.ones(shape=dem.shape, dtype=bool)
 catchment_mask[np.where(dem<-10)] = False # -99999.0 is current value of dem for nodata points.
 
+# soil types and soil physical properties and soil depth:
+peat_type_mask = peat_type_arr * catchment_mask
+peat_bottom_elevation = - peat_depth_arr * catchment_mask # meters with respect to dem surface. Should be negative!
+dem = dem * catchment_mask
+
 # peel the dem. Only when dem is not surrounded by water
 boundary_mask = utilities.peel_raster(dem, catchment_mask)
  
 # after peeling, catchment_mask should only be the fruit:
-#catchment_mask[boundary_mask] = False
+catchment_mask[boundary_mask] = False
 
-# soil types and soil physical properties and soil depth:
-peat_type_mask = peat_type_arr * catchment_mask
-peat_bottom_elevation = peat_depth_arr * catchment_mask # meters with respect to dem surface. Should be negative!
+h_to_tra_and_C_dict, K = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
 
-
-h_to_tra_and_C_dict = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
+# Plot K
+import matplotlib.pyplot as plt
+plt.figure(); z = np.linspace(0.0, -20.0, 400); plt.plot(K,z); plt.title('K')
 #soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
 
 #BOTTOM_ELE = -6.0 
@@ -103,7 +111,8 @@ sto_to_cut = sto_to_cut * catchment_mask.ravel()
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
 n_canals = len(c_to_r_list)
-block_height = 0.4 # water level of canal after placing dam.
+print('>>>> WARNING! BLOCK HEIGHT SHOULD BE = 0.4 TO COMPARE WITH OPTIMISATION!')
+block_height = 0.1 # water level of canal after placing dam.
 
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 canal_water_level = 1.2
