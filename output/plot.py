@@ -37,29 +37,34 @@ dry_peat_vol_no_dams = 40191.730578848255 # normalization value
 
 
 mc_df = mc_df[mc_df.i != 0]
-number_dams = (2,4,6,8,10,12,14,16,18,20, 30, 40, 50, 60)
-mean_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].mean()/dry_peat_vol_no_dams for i in number_dams]
-max_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams for i in number_dams]
-min_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams for i in number_dams]
+number_dams = (2,4,6,8,10,12,14,16,18,20, 30, 40, 50)
+mean_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].mean()/dry_peat_vol_no_dams*100 for i in number_dams]
+max_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams*100 for i in number_dams]
+min_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams*100 for i in number_dams]
 
 sa_df = sa_df.rename(columns=rename_cols_sa)
-sa_df.dry_peat_vol = sa_df.dry_peat_vol/dry_peat_vol_no_dams
+sa_df.dry_peat_vol = sa_df.dry_peat_vol/dry_peat_vol_no_dams*100
 
 ga_df = ga_df.rename(columns=rename_cols_ga)
-ga_df.dry_peat_vol = ga_df.dry_peat_vol/dry_peat_vol_no_dams
+ga_df.dry_peat_vol = ga_df.dry_peat_vol/dry_peat_vol_no_dams*100
 
+# Choose to plot ndams from number_dams above
+sa_plot = sa_df.loc[sa_df['ndams'].isin(number_dams)]
+ga_plot = ga_df.loc[ga_df['ndams'].isin(number_dams)]
 
 """
  Plot
 """
 
 fig, ax = plt.subplots(1)
-ax.plot(number_dams, mean_mc)
-ax.fill_between(number_dams, max_mc, min_mc, facecolor='red', alpha=0.5 )
+ax.plot(number_dams, mean_mc, alpha=1.0, color='red', label='random mean')
+ax.fill_between(number_dams, max_mc, min_mc, facecolor='pink', alpha=0.7, label='random range')
+ax.set_xlabel('Number of dams')
+ax.set_ylabel('Volume fraction of dry peat (%)')
 
-
-ax.scatter(x=sa_df.ndams.to_numpy(), y=sa_df.dry_peat_vol.to_numpy())
-ax.scatter(x=ga_df.ndams.to_numpy(), y=ga_df.dry_peat_vol.to_numpy())
+ax.scatter(x=sa_plot.ndams.to_numpy(), y=sa_plot.dry_peat_vol.to_numpy(), label='SA', alpha=0.8, color='orange')
+ax.scatter(x=ga_plot.ndams.to_numpy(), y=ga_plot.dry_peat_vol.to_numpy(), label='GA', alpha=0.5, color='blue')
+plt.legend()
 
 fname_fig = r'results_plot.png'
 plt.savefig(fname_fig)

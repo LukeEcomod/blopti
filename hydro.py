@@ -54,11 +54,11 @@ def big_4_raster_plot(title, raster1, raster2, raster3, raster4):
         axes1[1,1].set(title="elevation - phi")
 
 
-def plot_line_of_peat(raster, y_value, title, nx, ny, label):
+def plot_line_of_peat(raster, y_value, title, nx, ny, label, color, linewidth=1.):
     plt.figure(10)
     plt.title(title)
-    plt.plot(raster[y_value,:], label=label)
-    plt.legend()
+    plt.plot(raster[y_value,:], label=label, color=color, linewidth=linewidth)
+    plt.legend(fontsize='x-large')
     
     return 0
         
@@ -157,13 +157,10 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
                 raster3=ele.reshape(ny,nx),
                 raster4=(ele-phi.value).reshape(ny,nx)
                 )
-
+        # for later cross-section plots
         y_value=270
-        print "first cross-section plot"
-        ele_with_can = copy.copy(ele).reshape(ny,nx)
-        ele_with_can = ele_with_can * catchment_mask
-        ele_with_can[wt_canal_arr > 0] = wt_canal_arr[wt_canal_arr > 0]
-        plot_line_of_peat(ele_with_can, y_value=y_value, title="cross-section", nx=nx, ny=ny, label="ele")
+
+
         
 
 
@@ -207,7 +204,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     #********************************************************
                                                                   
     d=0   # day counter
-    timeStep = 1.                                                            
+    timeStep = 0.5                                                          
     max_sweeps = 1 # inner loop.
     ET = 0. # constant evapotranspoiration mm/day
     P = 6.0 # constant precipitation mm/day
@@ -234,8 +231,9 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
 #        print d
         
         if plotOpt:
-           # print "one more cross-section plot"
-            plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section",  nx=nx, ny=ny, label=d)
+            if d==1 or d==2 or d==3 or d==4:
+#                print "one more cross-section plot " + str(d)
+                plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section",  nx=nx, ny=ny, label=' WTD after ' + str(d) + ' day(s)', color='cornflowerblue', linewidth=1.0)
 
         
         res = 0.0
@@ -263,6 +261,12 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
             if remove_ponding_water:                 
                 s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water. This also removes phi in those masked values (for the plot only)
                 phi.setValue(s)                                                # set new values for water table
+                
+            plt.figure()
+            plt.imshow((ele-phi.value).reshape(ny,nx)[360:430,70:130], cmap='cividis')
+            plt.title(str(d))
+            plt.axis('off')
+            plt.colorbar()
 
         
         if (D.value<0.).any():
@@ -307,6 +311,12 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         axes[1,0].set(title="avg D over time")
         axes[1,1].plot(avg_wt_over_time)
         axes[1,1].set(title="avg_wt_over_time")
+        
+        # plot surface in cross-section
+        ele_with_can = copy.copy(ele).reshape(ny,nx)
+        ele_with_can = ele_with_can * catchment_mask
+        ele_with_can[wt_canal_arr > 0] = wt_canal_arr[wt_canal_arr > 0]
+        plot_line_of_peat(ele_with_can, y_value=y_value, title="cross-section", nx=nx, ny=ny, label="surface", color='peru', linewidth=2.0)
     
         plt.show()
         
