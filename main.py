@@ -27,7 +27,7 @@ Parse command-line arguments
 parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
 
 parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
-parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
+parser.add_argument('-b','--nblocks', default=10, help='(int) Number of blocks to locate. Default=5.', type=int)
 parser.add_argument('-n','--niter', default=2, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 
@@ -118,13 +118,19 @@ block_height = 0.1 # water level of canal after placing dam.
 canal_water_level = 1.2
 oWTcanlist = [x - canal_water_level for x in srfcanlist]
 
-
+hand_made_dams = True # compute performance of cherry-picked locations for dams.
 """
 MonteCarlo
 """
 for i in range(0,N_ITER):
     
     damLocation = np.random.randint(1, n_canals, N_BLOCKS).tolist() # Generate random kvector. 0 is not a good position in c_to_r_list
+    
+    if hand_made_dams:
+        # HAND-MADE RULE OF DAM POSITIONS TO ADD:
+        hand_picked_dams = (11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868)
+        damLocation = hand_picked_dams
+    
     wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, block_height, damLocation, CNM)
     """
     #########################################
@@ -164,8 +170,15 @@ for i in range(0,N_ITER):
     dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
                                                       peat_type_mask=peat_type_mask, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
                                                       diri_bc=diri_bc, neumann_bc = None, plotOpt=False, remove_ponding_water=True)
+    print('dry_peat_volume = ', dry_peat_volume)
+    
+    
     """
     Final printings
     """
-    with open(r'output/results_mc_2.txt', 'a') as output_file:
-        output_file.write("\n" + str(i) + "    " + str(dry_peat_volume) + "    " + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(DAYS) + "    " + str(time.ctime()))
+    if N_ITER > 20:
+        with open(r'output/results_mc_2.txt', 'a') as output_file:
+            output_file.write("\n" + str(i) + "    " + str(dry_peat_volume) + "    " + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(DAYS) + "    " + str(time.ctime()))
+
+
+

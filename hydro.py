@@ -168,7 +168,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         ele_with_can = copy.copy(ele).reshape(ny,nx)
         ele_with_can = ele_with_can * catchment_mask
         ele_with_can[wt_canal_arr > 0] = wt_canal_arr[wt_canal_arr > 0]
-        plot_line_of_peat(ele_with_can, y_value=y_value, title="cross-section", nx=nx, ny=ny, label="ele")
+        plot_line_of_peat(ele_with_can, y_value=y_value, title="cross-section", color='green', nx=nx, ny=ny, label="ele")
         
 
 
@@ -239,7 +239,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         
         if plotOpt:
            # print "one more cross-section plot"
-            plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section",  nx=nx, ny=ny, label=d)
+            plot_line_of_peat(phi.value.reshape(ny,nx), y_value=y_value, title="cross-section", color='blue', nx=nx, ny=ny, label=d)
 
         
         res = 0.0
