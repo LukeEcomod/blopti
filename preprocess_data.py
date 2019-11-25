@@ -62,8 +62,7 @@ def read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn, peat_depth
     
     
     # Eliminate rows and columns full of noData values.
-    # upper 5 rows, lower 5 rows, right 10 rows
-    dem = dem[7:-7, 5:-15]
+    dem = dem[7:-7, 5:-15] #old
     can_arr = can_arr[7:-7, 5:-15]
     peat_type_arr = peat_type_arr[7:-7, 5:-15]
     peat_depth_arr = peat_depth_arr[7:-7, 5:-15]

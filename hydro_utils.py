@@ -154,10 +154,10 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         sto.reverse(); gwl.reverse()
         stoToGwl =interp1d(np.array(stoT), np.array(gwlT), fill_value='extrapolate')
 
-#        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT) ??? Ask Ari
-        cc = np.gradient(gwlToSto(gwlT), gwlT) # Iñaki
+        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT) # ??? Ask Ari
+#        cc = np.gradient(gwlToSto(gwlT), gwlT) # Iñaki
         cc[cc<0.2]=0.2
-        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
+#        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
         
         # Iñaki's way:
         zeta = -z
@@ -185,7 +185,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         z= list(z);  z.reverse(); tr.reverse()
         gwlToTra = interS(-np.array(z), np.array(tr), k=3, ext='const') # returns limiting value outside interpolation domain 
     del tr
-    return gwlToSto, stoToGwl, gwlToTra, C
+    return gwlToSto, K, gwlToTra, C
 
 def peat_map_interp_functions():
     """
@@ -198,12 +198,12 @@ def peat_map_interp_functions():
     spara ={
     'gen':{'nLyrs':400, 'dzLyr': 0.05}, # General soil parameters, common to all soil types
     
-    'Dry agriculture land + shrub':{'ref': 1, # reference number that appears on the peat type map
+    'Secondary forest':{'ref': 1, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
     
-    'Plantation':{'ref': 2, # reference number that appears on the peat type map
+    'Secondary mangrove forest':{'ref': 2, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
@@ -223,52 +223,60 @@ def peat_map_interp_functions():
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
              
-    'Swamp shrub/old growth':{'ref': 6, # reference number that appears on the peat type map
+    'Shrub/old growth':{'ref': 6, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                
-    'Bareland':{'ref': 7, # reference number that appears on the peat type map
+    'Swamp shrub/old growth':{'ref': 7, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                 
-    'Settlement':{'ref': 8, # reference number that appears on the peat type map
+    'Dry agriculture land':{'ref': 8, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                   
-    'Waterbody':{'ref': 9, # reference number that appears on the peat type map
+    'Dry agriculture land + shrub':{'ref': 9, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                  
-    'Secondary mangrove forest':{'ref': 10, # reference number that appears on the peat type map
+    'Paddy field':{'ref': 10, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                                  
-    'Mining':{'ref': 11, # reference number that appears on the peat type map
+    'Plantation':{'ref': 11, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
               
-    'Dry agriculture land':{'ref': 12, # reference number that appears on the peat type map
+    'Settlement':{'ref': 12, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                             
-    'Paddy field':{'ref': 13, # reference number that appears on the peat type map
+    'Port':{'ref': 13, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                    
-    'Fish Pond':{'ref': 14, # reference number that appears on the peat type map
+    'Bareland':{'ref': 14, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
                  
-    'Swamp':{'ref': 15, # reference number that appears on the peat type map
+    'Mining':{'ref': 15, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':Kadjust,
+            'peat type top':'L', 'peat type bottom':['S']},
+    'Waterbody':{'ref': 16, # reference number that appears on the peat type map
+            'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
+            'vonP bottom': 10, 'Kadjust':Kadjust,
+            'peat type top':'L', 'peat type bottom':['S']},
+    'Swamp':{'ref': 17, # reference number that appears on the peat type map
             'vonP top': [1,1,1,1,2,2,2,2,2,3,3,3,3,3,3,4,4,4,4,4,4,5,5,6,6,7,7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
             'vonP bottom': 10, 'Kadjust':Kadjust,
             'peat type top':'L', 'peat type bottom':['S']},
@@ -289,11 +297,11 @@ def peat_map_interp_functions():
         peat_type_top_list = [spara[peat_type]['peat type top']]*lenvp
         lenpt = len(spara[peat_type]['peat type top']); ptype[0:lenpt] = peat_type_top_list  
         pF, Ksat = peat_hydrol_properties(vonP, var='H', ptype=ptype)  # peat hydraulic properties after Päivänen 1973    
-        _, _, hToTra, C = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
+        _, K, hToTra, C = CWTr(nLyrs, z, dz, pF, Ksat*spara[peat_type]['Kadjust'], direction='negative') # interpolated storage, transmissivity and diff water capacity functions
 
         h_to_tra_and_C_dict[spara[peat_type]['ref']] = {'name': peat_type, 'fullTra': hToTra(0.0), 'hToTra':hToTra, 'C':C}
 
-    return h_to_tra_and_C_dict
+    return h_to_tra_and_C_dict, K
 
     
 
