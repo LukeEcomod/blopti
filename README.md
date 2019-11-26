@@ -8,13 +8,14 @@ Canal blocking computation for Winrock.
   - Mask of peat area (vs soil area) for peat volume compus
   - Does the optimization change with a change in general canal water level? How?
   - Parameterization: K and C? And soil type / land use type.
+  - Make Excel sheet to read parameters?
 
 ## Installation
 --- Tested on Ubuntu 18.04 LTS---
 1. Create a new environment within Conda with minimal packages:
 
 ```
-conda create -n [name of environment] -c conda-forge python=2.7 numpy scipy rasterio fipy matplotlib pandas
+conda create -n [name of environment] -c conda-forge python=2.7 numpy scipy rasterio fipy matplotlib pandas openpyxl
 ```
 
 Optional packages:

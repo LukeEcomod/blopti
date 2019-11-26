@@ -8,6 +8,12 @@ Created on Thu Sep 27 09:57:45 2018
 import numpy as np
 import rasterio
 import scipy.sparse
+import pandas as pd
+
+
+def read_params(fn=r"/home/inaki/GitHub/dd_winrock/data/params.xlsx"):
+    df = pd.read_excel(fn)
+    return df
 
 
 def peat_depth_map(peat_depth_type_arr):

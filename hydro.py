@@ -66,7 +66,7 @@ def plot_line_of_peat(raster, y_value, title, nx, ny, label, color, linewidth=1.
 
 def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask, wt_canal_arr, boundary_arr,
               peat_type_mask, httd, tra_to_cut, sto_to_cut, 
-              diri_bc=0.0, neumann_bc = None, plotOpt=False, remove_ponding_water=True):
+              diri_bc=0.0, neumann_bc = None, plotOpt=False, remove_ponding_water=True, P=0.0, ET=0.0, dt=1.0):
     """
     INPUT:
         - ele: (nx,ny) sized NumPy array. Elevation in m above c.r.p.
@@ -76,6 +76,8 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         - value_for_masked: DEPRECATED. IT IS NOW THE SAME AS diri_bc.
         - diri_bc: None or float. If None, Dirichlet BC will not be implemented. If float, this number will be the BC.
         - neumann_bc: None or float. If None, Neumann BC will not be implemented. If float, this is the value of grad phi.
+        - P: Float. Constant precipitation. mm/day.
+        - ET: Float. Constant evapotranspiration. mm/day.
     """
 #    dneg = []
    
@@ -211,16 +213,15 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     
     #********************************************************
                                                                   
-    timeStep = 1.0                                                            
+    dt = 1.0                                                            
     max_sweeps = 1 # inner loop.
     ET = 0. # constant evapotranspoiration mm/day
-    P = 6.0 # constant precipitation mm/day
+    P = 0.0 # constant precipitation mm/day
 
 
     source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m/day. For steadystate! Why for steadystate?
 
     avg_wt_over_time = []
-    avg_D_over_time = []
     
     
                                                              
@@ -252,7 +253,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         for r in range(max_sweeps):
             resOld=res
                 
-            res = eq.sweep(var=phi, dt=timeStep) # solve linearization of PDE
+            res = eq.sweep(var=phi, dt=dt) # solve linearization of PDE
 
 
             #print "sum of Ds: ", np.sum(D.value)/1e8 

@@ -39,7 +39,7 @@ N_ITER = args.niter
 """
 Read and preprocess data
 """
-retrieve_canalarr_from_pickled = False
+
 
 """ Stratification 2 data version. Remove in the future"""
 #preprocessed_datafolder = r"data/Strat2"
@@ -54,22 +54,21 @@ dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 peat_type_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif"
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif"
+params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx"
 
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
     CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=can_rst_fn, dem_rst_fn=dem_rst_fn)
 
-elif retrieve_canalarr_from_pickled==True:
-    pickle_folder = r"C:\Users\L1817\Winrock"
-    pickled_canal_array_fn = r'\DEM_and_canals.pkl'
-    with open(pickle_folder + pickled_canal_array_fn) as f:
-        CNM, cr, c_to_r_list = pickle.load(f)
-    print "Canal adjacency matrix and raster loaded from pickled."
-    
 else:
     print "Canal adjacency matrix and raster loaded from memory."
     
 _ , dem, peat_type_arr, peat_depth_arr = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn, peat_depth_rst_fn)
+
+PARAMS_df = preprocess_data.read_params(params_fn)
+BLOCK_HEIGHT = PARAMS_df.block_height[0]; CANAL_WATER_LEVEL = PARAMS_df.canal_water_level[0]
+DIRI_BC = PARAMS_df.diri_bc[0]; HINI = PARAMS_df.hini[0]; P = PARAMS_df.P[0]
+ET = PARAMS_df.ET[0]; TIMESTEP = PARAMS_df.timeStep[0]; KADJUST = PARAMS_df.Kadjust[0]
 
 
 print(">>>>> WARNING, OVERWRITING PEAT DEPTH")
@@ -81,18 +80,18 @@ print("rasters read and preprocessed from file")
 catchment_mask = np.ones(shape=dem.shape, dtype=bool)
 catchment_mask[np.where(dem<-10)] = False # -99999.0 is current value of dem for nodata points.
 
-# soil types and soil physical properties and soil depth:
-peat_type_mask = peat_type_arr * catchment_mask
-peat_bottom_elevation = - peat_depth_arr * catchment_mask # meters with respect to dem surface. Should be negative!
-dem = dem * catchment_mask
-
 # peel the dem. Only when dem is not surrounded by water
 boundary_mask = utilities.peel_raster(dem, catchment_mask)
  
 # after peeling, catchment_mask should only be the fruit:
 catchment_mask[boundary_mask] = False
 
-h_to_tra_and_C_dict, K = hydro_utils.peat_map_interp_functions() # Load peatmap soil types' physical properties dictionary
+# soil types and soil physical properties and soil depth:
+peat_type_mask = peat_type_arr * catchment_mask
+peat_bottom_elevation = - peat_depth_arr * catchment_mask # meters with respect to dem surface. Should be negative!
+#
+
+h_to_tra_and_C_dict, K = hydro_utils.peat_map_interp_functions(Kadjust=KADJUST) # Load peatmap soil types' physical properties dictionary
 
 # Plot K
 import matplotlib.pyplot as plt
@@ -112,11 +111,10 @@ srfcanlist =[dem[coords] for coords in c_to_r_list]
 
 n_canals = len(c_to_r_list)
 print('>>>> WARNING! BLOCK HEIGHT SHOULD BE = 0.4 TO COMPARE WITH OPTIMISATION!')
-block_height = 0.1 # water level of canal after placing dam.
+BLOCK_HEIGHT = 0.1 # water level of canal after placing dam.
 
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
-canal_water_level = 1.2
-oWTcanlist = [x - canal_water_level for x in srfcanlist]
+oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
 
 hand_made_dams = True # compute performance of cherry-picked locations for dams.
 """
@@ -131,7 +129,7 @@ for i in range(0,N_ITER):
         hand_picked_dams = (11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868)
         damLocation = hand_picked_dams
     
-    wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, block_height, damLocation, CNM)
+    wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, BLOCK_HEIGHT, damLocation, CNM)
     """
     #########################################
                     HYDROLOGY
@@ -139,14 +137,10 @@ for i in range(0,N_ITER):
     """
     ny, nx = dem.shape
     dx = 1.; dy = 1. # metres per pixel  
-    diri_bc = 0.0
     
+    boundary_arr = boundary_mask * (dem - DIRI_BC) # constant Dirichlet value in the boundaries
     
-    hini = - 0.0 # initial wt wrt surface elevation in meters.
-    
-    boundary_arr = boundary_mask * (dem - diri_bc) # constant Dirichlet value in the boundaries
-    
-    ele = dem[:]
+    ele = dem * catchment_mask
     
     # Get a pickled phi solution (not ele-phi!) computed before without blocks, independently,
     # and use it as initial condition to improve convergence time of the new solution
@@ -157,7 +151,7 @@ for i in range(0,N_ITER):
         print "transient phi solution loaded as initial condition"
         
     else:
-        phi_ini = ele + hini #initial h (gwl) in the compartment.
+        phi_ini = ele + HINI #initial h (gwl) in the compartment.
         phi_ini = phi_ini * catchment_mask
            
     wt_canal_arr = np.zeros((ny,nx)) # (nx,ny) array with wt canal height in corresponding nodes
@@ -169,7 +163,8 @@ for i in range(0,N_ITER):
     
     dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
                                                       peat_type_mask=peat_type_mask, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
-                                                      diri_bc=diri_bc, neumann_bc = None, plotOpt=False, remove_ponding_water=True)
+                                                      diri_bc=DIRI_BC, neumann_bc = None, plotOpt=True, remove_ponding_water=True,
+                                                      P=P, ET=ET, dt=TIMESTEP)
     print('dry_peat_volume = ', dry_peat_volume)
     
     
