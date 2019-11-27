@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='Run hydro without any optimization
 
 parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=10, help='(int) Number of blocks to locate. Default=5.', type=int)
-parser.add_argument('-n','--niter', default=2, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
+parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 
 DAYS = args.days
@@ -54,7 +54,8 @@ dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 peat_type_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif"
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif"
-params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx"
+#params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
+params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
 
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
@@ -116,7 +117,7 @@ BLOCK_HEIGHT = 0.1 # water level of canal after placing dam.
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
 
-hand_made_dams = True # compute performance of cherry-picked locations for dams.
+hand_made_dams = False # compute performance of cherry-picked locations for dams.
 """
 MonteCarlo
 """

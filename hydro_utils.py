@@ -131,7 +131,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         pF van Genuchten water retention parameters: ThetaS, ThetaR, alfa, n
         Ksat saturated hydraulic conductivity in m s-1. K in m/day.
         direction: positive or negative downwards
-    """    
+    """
     #-------Parameters ---------------------
     z = np.array(z)   
     dz =np.array(dz)
@@ -157,11 +157,11 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT) # ??? Ask Ari
 #        cc = np.gradient(gwlToSto(gwlT), gwlT) # Iñaki
         cc[cc<0.2]=0.2
-#        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
+        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
         
         # Iñaki's way:
-        zeta = -z
-        C = interp1d(zeta, wrc(pF, zeta), bounds_error=False, fill_value=(wrc(pF[-1], zeta[-1]), 1.))
+#        zeta = -z
+#        C = interp1d(zeta, wrc(pF, zeta), bounds_error=False, fill_value=(wrc(pF[-1], zeta[-1]), 1.))
 
         
 
