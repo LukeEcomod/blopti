@@ -45,8 +45,10 @@ dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
-params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
+#params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
 #params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
+
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
     CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=can_rst_fn, dem_rst_fn=dem_rst_fn)
