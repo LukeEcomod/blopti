@@ -2,7 +2,9 @@
 Canal blocking computation for Winrock.
 
 ## ToDo
-
+ 
+  - Some parts are water but not canals!
+  - Some parts are soil but not peat!
   - Monotonical canal flow (maybe solved with Strat4?)
   - K(z) and C(z) and the Dupuit assumptions
   - Mask of peat area (vs soil area) for peat volume compus
