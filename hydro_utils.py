@@ -157,7 +157,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT)
 #        cc = np.gradient(gwlToSto(gwlT), gwlT) # Iñaki
         cc[cc<0.2]=0.2
-        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
+#        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function
         
         # Iñaki's way:
         zeta = -z
@@ -201,88 +201,39 @@ def peat_map_interp_functions(Kadjust):
     spara ={
     'gen':{'nLyrs':400, 'dzLyr': 0.05}, # General soil parameters, common to all soil types
     
-    'Secondary forest':{'ref': 1, # reference number that appears on the peat type map
+    'Hemists/Mineral':{'ref': 1, # reference number that appears on the peat type map
             'vonP top': vonP_top,
             'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
+            'peat type top':'L', 'peat type bottom':['S']},
+    'Hemists/Saprists':{'ref': 2, # reference number that appears on the peat type map
+            'vonP top': vonP_top,
+            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
+            'peat type top':'L', 'peat type bottom':['S']},
+    'Hemists/Saprists_2':{'ref': 3, # reference number that appears on the peat type map
+            'vonP top': vonP_top,
+            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
+            'peat type top':'L', 'peat type bottom':['S']},
+    'NotPeat':{'ref': 4, # reference number that appears on the peat type map
+            'vonP top': vonP_top,
+            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
+            'peat type top':'L', 'peat type bottom':['S']},
+    'OpenWater':{'ref': 5, # reference number that appears on the peat type map
+            'vonP top': vonP_top,
+            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust * 0.0,
+            'peat type top':'L', 'peat type bottom':['S']},
+    'Saprists/Hemists':{'ref': 6, # reference number that appears on the peat type map
+            'vonP top': vonP_top,
+            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust * 0.5,
+            'peat type top':'L', 'peat type bottom':['S']},
+    'Saprists/Hemists_2':{'ref': 7, # reference number that appears on the peat type map
+            'vonP top': vonP_top,
+            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust * 0.5,
+            'peat type top':'L', 'peat type bottom':['S']},
+    'Saprists_Hemists_4':{'ref': 8, # reference number that appears on the peat type map
+            'vonP top': vonP_top,
+            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust * 0.5,
             'peat type top':'L', 'peat type bottom':['S']},
     
-    'Secondary mangrove forest':{'ref': 2, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-    
-    'Primary swamp forest':{'ref': 3, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-    
-    'Secondary swamp forest':{'ref': 4, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-            
-    'Timber/Forest plantation':{'ref': 5, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-             
-    'Shrub/old growth':{'ref': 6, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-               
-    'Swamp shrub/old growth':{'ref': 7, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-                
-    'Dry agriculture land':{'ref': 8, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-                  
-    'Dry agriculture land + shrub':{'ref': 9, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-                 
-    'Paddy field':{'ref': 10, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-                                 
-    'Plantation':{'ref': 11, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-              
-    'Settlement':{'ref': 12, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-                            
-    'Port':{'ref': 13, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-                   
-    'Bareland':{'ref': 14, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-                 
-    'Mining':{'ref': 15, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-    'Waterbody':{'ref': 16, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
-    'Swamp':{'ref': 17, # reference number that appears on the peat type map
-            'vonP top': vonP_top,
-            'vonP bottom': vonP_bottom, 'Kadjust':Kadjust,
-            'peat type top':'L', 'peat type bottom':['S']},
     }
     
     # Common to all soil types

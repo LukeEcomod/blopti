@@ -285,7 +285,10 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     
     
     """ Volume of dry peat calc."""
-    peat_vol_weights = utilities.PeatV_weight_calc(np.array(~dr*catchment_mask,dtype=int))
+    not_peat = np.ones(shape=peat_type_mask.shape) # Not all soil is peat!
+    not_peat[peat_type_mask == 4] = 0 # NotPeat
+    not_peat[peat_type_mask == 5] = 0 # OpenWater
+    peat_vol_weights = utilities.PeatV_weight_calc(np.array(~dr * catchment_mask * not_peat, dtype=int))
     dry_peat_volume = utilities.PeatVolume(peat_vol_weights, (ele-phi.value).reshape(ny,nx))
 #    print "Dry peat volume = ", dry_peat_volume     
        

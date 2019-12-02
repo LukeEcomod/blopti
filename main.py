@@ -52,30 +52,28 @@ Read and preprocess data
 preprocessed_datafolder = r"data/Strat4"
 dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
-peat_type_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif"
-peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif"
+#land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
+peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
 #params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
-params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+#params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
 
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
     CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=can_rst_fn, dem_rst_fn=dem_rst_fn)
 
-else:
-    print "Canal adjacency matrix and raster loaded from memory."
+#else:
+#    print "Canal adjacency matrix and raster loaded from memory."
     
-_ , dem, peat_type_arr, peat_depth_arr = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_type_rst_fn, peat_depth_rst_fn)
+_ , dem, peat_type_arr, peat_depth_arr = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_depth_rst_fn, peat_depth_rst_fn)
 
 PARAMS_df = preprocess_data.read_params(params_fn)
 BLOCK_HEIGHT = PARAMS_df.block_height[0]; CANAL_WATER_LEVEL = PARAMS_df.canal_water_level[0]
 DIRI_BC = PARAMS_df.diri_bc[0]; HINI = PARAMS_df.hini[0]; P = PARAMS_df.P[0]
 ET = PARAMS_df.ET[0]; TIMESTEP = PARAMS_df.timeStep[0]; KADJUST = PARAMS_df.Kadjust[0]
 
-
 print(">>>>> WARNING, OVERWRITING PEAT DEPTH")
 peat_depth_arr[peat_depth_arr < 2.] = 2.
-
-print("rasters read and preprocessed from file")
 
 # catchment mask
 catchment_mask = np.ones(shape=dem.shape, dtype=bool)
@@ -88,31 +86,30 @@ boundary_mask = utilities.peel_raster(dem, catchment_mask)
 catchment_mask[boundary_mask] = False
 
 # soil types and soil physical properties and soil depth:
-peat_type_mask = peat_type_arr * catchment_mask
+peat_type_masked = peat_type_arr * catchment_mask
 peat_bottom_elevation = - peat_depth_arr * catchment_mask # meters with respect to dem surface. Should be negative!
 #
 
 h_to_tra_and_C_dict, K = hydro_utils.peat_map_interp_functions(Kadjust=KADJUST) # Load peatmap soil types' physical properties dictionary
 
 # Plot K
-import matplotlib.pyplot as plt
-plt.figure(); z = np.linspace(0.0, -20.0, 400); plt.plot(K,z); plt.title('K')
+#import matplotlib.pyplot as plt
+#plt.figure(); z = np.linspace(0.0, -20.0, 400); plt.plot(K,z); plt.title('K')
 #soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
 
 #BOTTOM_ELE = -6.0 
 #peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE
 #peat_bottom_elevation = peat_bottom_elevation*catchment_mask
-tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_mask,
+tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_masked,
                                            gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
-sto_to_cut = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_mask,
+sto_to_cut = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_masked,
                                            gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
 sto_to_cut = sto_to_cut * catchment_mask.ravel()
 
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
 n_canals = len(c_to_r_list)
-print('>>>> WARNING! BLOCK HEIGHT SHOULD BE = 0.4 TO COMPARE WITH OPTIMISATION!')
-BLOCK_HEIGHT = 0.1 # water level of canal after placing dam.
+
 
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
@@ -163,18 +160,25 @@ for i in range(0,N_ITER):
     
     
     dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
-                                                      peat_type_mask=peat_type_mask, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
-                                                      diri_bc=DIRI_BC, neumann_bc = None, plotOpt=True, remove_ponding_water=True,
+                                                      peat_type_mask=peat_type_masked, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
+                                                      diri_bc=DIRI_BC, neumann_bc = None, plotOpt=False, remove_ponding_water=True,
                                                       P=P, ET=ET, dt=TIMESTEP)
-    print('dry_peat_volume = ', dry_peat_volume)
     
+    water_blocked_canals = sum(np.subtract(wt_canals[1:], oWTcanlist[1:]))
     
+    print('dry_peat_volume = ', dry_peat_volume, '\n',
+          'water_blocked_canals = ', water_blocked_canals)
+
     """
     Final printings
     """
     if N_ITER > 20:
         with open(r'output/results_mc_2.txt', 'a') as output_file:
-            output_file.write("\n" + str(i) + "    " + str(dry_peat_volume) + "    " + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(DAYS) + "    " + str(time.ctime()))
+            output_file.write(
+                                "\n" + str(i) + "    " + str(dry_peat_volume) + "    "
+                                + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(DAYS) + "    "
+                                + str(time.ctime()) + "    " + str(water_blocked_canals)
+                              )
 
 
 
