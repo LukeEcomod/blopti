@@ -54,8 +54,9 @@ dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
-params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
+#params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
 #params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
 
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
@@ -160,7 +161,7 @@ for i in range(0,N_ITER):
     
     dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
                                                       peat_type_mask=peat_type_masked, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
-                                                      diri_bc=DIRI_BC, neumann_bc = None, plotOpt=True, remove_ponding_water=True,
+                                                      diri_bc=DIRI_BC, neumann_bc = None, plotOpt=False, remove_ponding_water=True,
                                                       P=P, ET=ET, dt=TIMESTEP)
     
     water_blocked_canals = sum(np.subtract(wt_canals[1:], oWTcanlist[1:]))

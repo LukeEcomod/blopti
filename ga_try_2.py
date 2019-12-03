@@ -45,8 +45,10 @@ dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
-params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
+#params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
 #params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
+
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
     CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=can_rst_fn, dem_rst_fn=dem_rst_fn)
@@ -149,8 +151,9 @@ def evalDryPeatVol(individual): # this should be returning dry peat volume in a 
 
 toolbox.register("evaluate", evalDryPeatVol)
 toolbox.register("mate", tools.cxOnePoint) # single point crossover
-toolbox.register("mutate", tools.mutUniformInt, low=1, up=n_canals-1, indpb=0.05) # replaces individual's attribute with random int
-toolbox.register("select", tools.selTournament, tournsize=int(N_BLOCKS/3) + 1) # tournsize best are selected
+toolbox.register("mutate", tools.mutUniformInt, low=1, up=n_canals-1, indpb=0.1) # replaces individual's attribute with random int
+#toolbox.register("select", tools.selBest, k=5) # k best are selected
+toolbox.register("select", tools.selTournament, tournsize=int(N_BLOCKS/3)+1)
 
 if __name__ == "__main__":
 #    random.seed(64)
@@ -167,7 +170,7 @@ if __name__ == "__main__":
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.1, ngen=N_GENERATIONS, 
+    algorithms.eaSimple(pop, toolbox, cxpb=0.3, mutpb=0.1, ngen=N_GENERATIONS, 
                         stats=stats, halloffame=hof, verbose=0)
 
     pool.close()
