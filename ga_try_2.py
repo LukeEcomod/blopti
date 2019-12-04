@@ -152,8 +152,7 @@ def evalDryPeatVol(individual): # this should be returning dry peat volume in a 
 toolbox.register("evaluate", evalDryPeatVol)
 toolbox.register("mate", tools.cxOnePoint) # single point crossover
 toolbox.register("mutate", tools.mutUniformInt, low=1, up=n_canals-1, indpb=0.1) # replaces individual's attribute with random int
-toolbox.register("select", tools.selBest, k=5) # k best are selected
-#toolbox.register("select", tools.selTournament, k=5, tournsize=5) # select best from random groups of size tournsize, k times. 
+toolbox.register("select", tools.selBest) # k best are selected
 
 if __name__ == "__main__":
 #    random.seed(64)
@@ -170,7 +169,7 @@ if __name__ == "__main__":
     stats.register("min", np.min)
     stats.register("max", np.max)
 
-    algorithms.eaSimple(pop, toolbox, cxpb=0.5, mutpb=0.1, ngen=N_GENERATIONS, 
+    algorithms.eaSimple(pop, toolbox, cxpb=0.3, mutpb=0.1, ngen=N_GENERATIONS, 
                         stats=stats, halloffame=hof, verbose=0)
 
     pool.close()
