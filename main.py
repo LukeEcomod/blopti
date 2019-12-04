@@ -27,7 +27,7 @@ Parse command-line arguments
 parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
 
 parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
-parser.add_argument('-b','--nblocks', default=10, help='(int) Number of blocks to locate. Default=5.', type=int)
+parser.add_argument('-b','--nblocks', default=0, help='(int) Number of blocks to locate. Default=5.', type=int)
 parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 
@@ -55,8 +55,8 @@ can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
 #params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
-#params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
-params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
+params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+#params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
 
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():

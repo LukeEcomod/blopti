@@ -20,7 +20,7 @@ fname_mc = r'results_mc_2.txt'
 fname_ga = r'results_ga.txt'
 fname_sa = r'results_sa_2.txt'
 
-colnames = ['i', 'dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr' ]
+colnames = ['i', 'dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr', 'water_changed_canals' ]
 rename_cols_sa = {'i':'dry_peat_vol', 'dry_peat_vol':'ndams', 'ndams':'niter', 'niter':'days', 'days':'day_week', 'day_week':'month', 'month':'day_month', 'day_month':'time', 'time':'yr' }
 colnames_ga = {'dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr', 'blocks', 'a', 'b', 'c'}
 rename_cols_ga = {'day_month':'dry_peat_vol', 'niter':'ndams', 'c': 'niter', 'b':'days', 'blocks':'day_week', 'day_week':'month', 'days':'day_month', 'month':'time', 'ndams':'yr', 'a': 'b1', 'time':'b2', 'yr':'b3', 'dry_peat_vol':'b4'}
@@ -33,11 +33,14 @@ sa_df = pd.read_csv(fname_sa, delim_whitespace=True, header=None, names=colnames
  Get info out
 """
 
-dry_peat_vol_no_dams = 40191.730578848255 # normalization value
+#dry_peat_vol_no_dams = 40191.730578848255 # normalization value OLD
+dry_peat_vol_no_dams = 7650.4955258016635 # Normalization Nov 29
 
 
 mc_df = mc_df[mc_df.i != 0]
-number_dams = (2,4,6,8,10,12,14,16,18,20, 30, 40, 50)
+number_dams = (5,10,20, 30, 40, 50, 60, 70, 80)
+
+mc_df = mc_df[mc_df['niter'] == 2000]
 mean_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].mean()/dry_peat_vol_no_dams*100 for i in number_dams]
 max_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams*100 for i in number_dams]
 min_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams*100 for i in number_dams]
@@ -52,8 +55,12 @@ ga_df.dry_peat_vol = ga_df.dry_peat_vol/dry_peat_vol_no_dams*100
 sa_plot = sa_df.loc[sa_df['ndams'].isin(number_dams)]
 ga_plot = ga_df.loc[ga_df['ndams'].isin(number_dams)]
 
+
+sa_plot = sa_plot[sa_plot['day_month']==30]
+ga_plot = ga_plot[ga_plot['day_month']==30]
+
 """
- Plot
+ Plot V_dry_peat vs ndams
 """
 
 fig, ax = plt.subplots(1)
@@ -76,5 +83,25 @@ sns.set(style="whitegrid", palette="pastel", color_codes=True)
 sns.violinplot(x=mc_df.ndams, y=mc_df.dry_peat_vol/dry_peat_vol_no_dams,  inner="quart")
 
 sns.despine(left=True)
+
+"""
+ Plot V_dry_peat vs water raised in canals
+"""
+plt.figure()
+plt.title('All n_dams')
+plt.xlabel('water changed canals (m)')
+plt.ylabel('dry peat vol (m^3)')
+plt.scatter(x = -mc_df.water_changed_canals.to_numpy(), y = mc_df.dry_peat_vol.to_numpy(), s=0.5)
+
+plt.figure()
+plt.title('Separated by n_dams')
+plt.xlabel('water changed canals (m)')
+plt.ylabel('dry peat vol (m^3)')
+for ndams in number_dams:
+    by_dams = mc_df[mc_df.ndams == ndams]
+    plt.scatter(x = -by_dams.water_changed_canals.to_numpy(), y = by_dams.dry_peat_vol.to_numpy(), s=2.0, label=str(ndams))
+plt.legend()
+
+
 
 plt.show()
