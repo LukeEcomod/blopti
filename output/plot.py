@@ -41,9 +41,10 @@ mc_df = mc_df[mc_df.i != 0]
 number_dams = (5,10,20, 30, 40, 50, 60, 70, 80)
 
 mc_df = mc_df[mc_df['niter'] == 2000]
-mean_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].mean()/dry_peat_vol_no_dams*100 for i in number_dams]
-max_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams*100 for i in number_dams]
-min_mc = [mc_df[mc_df.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams*100 for i in number_dams]
+mc_df1 = mc_df[mc_df['days']==3]
+mean_mc = [mc_df1[mc_df1.ndams == i]['dry_peat_vol'].mean()/dry_peat_vol_no_dams*100 for i in number_dams]
+max_mc = [mc_df1[mc_df1.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams*100 for i in number_dams]
+min_mc = [mc_df1[mc_df1.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams*100 for i in number_dams]
 
 sa_df = sa_df.rename(columns=rename_cols_sa)
 sa_df.dry_peat_vol = sa_df.dry_peat_vol/dry_peat_vol_no_dams*100
@@ -51,13 +52,16 @@ sa_df.dry_peat_vol = sa_df.dry_peat_vol/dry_peat_vol_no_dams*100
 ga_df = ga_df.rename(columns=rename_cols_ga)
 ga_df.dry_peat_vol = ga_df.dry_peat_vol/dry_peat_vol_no_dams*100
 
+# slice out bad stuff
+ga_df = ga_df[21:]
+
 # Choose to plot ndams from number_dams above
 sa_plot = sa_df.loc[sa_df['ndams'].isin(number_dams)]
 ga_plot = ga_df.loc[ga_df['ndams'].isin(number_dams)]
 
 
 sa_plot = sa_plot[sa_plot['day_month']==30]
-ga_plot = ga_plot[ga_plot['day_month']==30]
+
 
 """
  Plot V_dry_peat vs ndams

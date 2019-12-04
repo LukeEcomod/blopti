@@ -212,12 +212,8 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
              
     
     #********************************************************
-                                                                  
-    dt = 1.0                                                            
+                                                       
     max_sweeps = 1 # inner loop.
-    ET = 0. # constant evapotranspoiration mm/day
-    P = 0.0 # constant precipitation mm/day
-
 
     source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m/day. For steadystate! Why for steadystate?
 
