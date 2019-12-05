@@ -154,7 +154,7 @@ def CWTr(nLyrs, z, dz, pF, Ksat, direction='positive'):
         sto.reverse(); gwl.reverse()
         stoToGwl =interp1d(np.array(stoT), np.array(gwlT), fill_value='extrapolate')
 
-        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT) # ??? Ask Ari
+        cc=np.gradient(gwlToSto(gwlT))/np.gradient(gwlT)
 #        cc = np.gradient(gwlToSto(gwlT), gwlT) # Iñaki
         cc[cc<0.2]=0.2
 #        C = interp1d(np.array(gwlT), cc, bounds_error=False, fill_value=(0.,1.) )  #storage coefficient function

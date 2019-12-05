@@ -20,7 +20,7 @@ fname_mc = r'results_mc_2.txt'
 fname_ga = r'results_ga.txt'
 fname_sa = r'results_sa_2.txt'
 
-colnames = ['i', 'dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr' ]
+colnames = ['i', 'dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr', 'water_changed_canals' ]
 rename_cols_sa = {'i':'dry_peat_vol', 'dry_peat_vol':'ndams', 'ndams':'niter', 'niter':'days', 'days':'day_week', 'day_week':'month', 'month':'day_month', 'day_month':'time', 'time':'yr' }
 colnames_ga = {'dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr', 'blocks', 'a', 'b', 'c'}
 rename_cols_ga = {'day_month':'dry_peat_vol', 'niter':'ndams', 'c': 'niter', 'b':'days', 'blocks':'day_week', 'day_week':'month', 'days':'day_month', 'month':'time', 'ndams':'yr', 'a': 'b1', 'time':'b2', 'yr':'b3', 'dry_peat_vol':'b4'}
@@ -59,8 +59,12 @@ sa_df = sa_df[sa_df['dry_peat_vol'] < 100]
 sa_plot = sa_df.loc[sa_df['ndams'].isin(number_dams)]
 ga_plot = ga_df.loc[ga_df['ndams'].isin(number_dams)]
 
+
+sa_plot = sa_plot[sa_plot['day_month']==30]
+
+
 """
- Plot dry vs ndams
+ Plot V_dry_peat vs ndams
 """
 
 fig, ax = plt.subplots(1)
