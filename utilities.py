@@ -119,7 +119,8 @@ def PeatVolume(weights, Z):
         - weights: weights as computed from nn_squares_sum function
         - Z: array of with values = surface dem elevation - wt
     OUTPUT:
-        - Dry peat volume. Units?
+        - Dry peat volume. Units: ha x m. The ha thing is coming from the pixel size being 100x100m and dx=dy=1.
+        On the other hand, water table depth is in m.
     """
     
     # This is good code for the future.

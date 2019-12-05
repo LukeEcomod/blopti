@@ -27,7 +27,7 @@ Parse command-line arguments
 parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
 
 parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
-parser.add_argument('-b','--nblocks', default=10, help='(int) Number of blocks to locate. Default=5.', type=int)
+parser.add_argument('-b','--nblocks', default=0, help='(int) Number of blocks to locate. Default=5.', type=int)
 parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 

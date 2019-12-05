@@ -22,9 +22,11 @@ def peat_depth_map(peat_depth_type_arr):
     peat_depth_arr[peat_depth_type_arr==1] = 2. # depth in meters.
     peat_depth_arr[peat_depth_type_arr==2] = 2.
     peat_depth_arr[peat_depth_type_arr==3] = 4.
-    peat_depth_arr[peat_depth_type_arr==4] = 4.
-    peat_depth_arr[peat_depth_type_arr==5] = 8.
-    peat_depth_arr[peat_depth_type_arr==6] = 1.
+    peat_depth_arr[peat_depth_type_arr==4] = 0.
+    peat_depth_arr[peat_depth_type_arr==5] = 0.
+    peat_depth_arr[peat_depth_type_arr==6] = 2.
+    peat_depth_arr[peat_depth_type_arr==7] = 4.
+    peat_depth_arr[peat_depth_type_arr==8] = 8.
     
     return peat_depth_arr
       
