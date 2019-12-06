@@ -51,7 +51,7 @@ ga_df = ga_df.rename(columns=rename_cols_ga)
 ga_df.dry_peat_vol = ga_df.dry_peat_vol/dry_peat_vol_no_dams*100
 
 # slice out
-ga_df = ga_df[14:]
+ga_df = ga_df[21:]
 sa_df = sa_df[sa_df['dry_peat_vol'] < 100]
 
 
@@ -87,7 +87,21 @@ plt.legend()
 #sns.violinplot(x=mc_df.ndams, y=mc_df.dry_peat_vol/dry_peat_vol_no_dams,  inner="quart")
 
 #sns.despine(left=True)
+"""
+Plot relative improvement
+"""
+mmc_improvement = np.sort(100. - np.array(mean_mc_plot_vol))
+sa_improvement = 100. - np.sort(sa_plot.dry_peat_vol)[::-1]
+ga_improvement = 100. - np.sort(ga_plot.dry_peat_vol)[::-1]
 
+fig, ax = plt.subplots(1)
+
+ax.set_xlabel('Number of dams')
+ax.set_ylabel('Relative improvement wrt random mean')
+
+ax.scatter(x=number_dams, y=sa_improvement/mmc_improvement, label='SA', alpha=0.8, color='orange')
+ax.scatter(x=number_dams, y=ga_improvement/mmc_improvement, label='GA', alpha=0.5, color='blue')
+plt.legend()
 
 
 
@@ -117,8 +131,14 @@ ax.set_ylabel('Volume fraction of dry peat (%)')
 #ax.scatter(x=sa_plot.ndams.to_numpy(), y=sa_plot.dry_peat_vol.to_numpy(), label='SA', alpha=0.8, color='orange')
 
 
-
-
+"""
+Plot correlation Vdry peat vs CWL change
+"""
+mc_df3 = mc_df2[mc_df2['days'] == 3]
+fig, ax = plt.subplots(1)
+ax.scatter(x=-mc_df3.water_changed_canals, y=mc_df3.dry_peat_vol)
+ax.set_xlabel('CWL change')
+ax.set_ylabel('Volume fraction of dry peat (%)')
 
 
 plt.show()
