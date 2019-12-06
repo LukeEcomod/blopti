@@ -173,7 +173,7 @@ for i in range(0,N_ITER):
     Final printings
     """
     if N_ITER > 20:
-        with open(r'output/results_mc_2.txt', 'a') as output_file:
+        with open(r'output/results_mc_3.txt', 'a') as output_file:
             output_file.write(
                                 "\n" + str(i) + "    " + str(dry_peat_volume) + "    "
                                 + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(DAYS) + "    "
