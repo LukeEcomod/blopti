@@ -114,7 +114,7 @@ n_canals = len(c_to_r_list)
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
 
-hand_made_dams = True # compute performance of cherry-picked locations for dams.
+hand_made_dams = False # compute performance of cherry-picked locations for dams.
 """
 MonteCarlo
 """
@@ -125,7 +125,6 @@ for i in range(0,N_ITER):
     if hand_made_dams:
         # HAND-MADE RULE OF DAM POSITIONS TO ADD:
         hand_picked_dams = (11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868)
-        hand_picked_dams = [6122, 6623, 1882, 5228, 9132, 7436, 11098, 9886, 7287, 841, 6293, 6908, 8442, 7648, 11043, 783, 11091, 2408, 9775, 426, 11225, 5303, 9759, 6945, 4373, 3305, 547, 1547, 402, 9305, 3482, 6947, 8698, 10001, 9983, 6999, 2832, 9022, 7884, 2007]
         damLocation = hand_picked_dams
     
     wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, BLOCK_HEIGHT, damLocation, CNM)
