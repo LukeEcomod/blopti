@@ -27,8 +27,8 @@ Parse command-line arguments
 parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
 
 parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
-parser.add_argument('-b','--nblocks', default=0, help='(int) Number of blocks to locate. Default=5.', type=int)
-parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
+parser.add_argument('-b','--nblocks', default=10, help='(int) Number of blocks to locate. Default=5.', type=int)
+parser.add_argument('-n','--niter', default=10, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 
 DAYS = args.days
@@ -55,8 +55,8 @@ can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
 #params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
-params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
-#params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
+#params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
 
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
@@ -115,13 +115,19 @@ n_canals = len(c_to_r_list)
 oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
 
 hand_made_dams = False # compute performance of cherry-picked locations for dams.
+quasi_random = True # Don't allow overlapping blocks
 """
 MonteCarlo
 """
 for i in range(0,N_ITER):
     
-    damLocation = np.random.randint(1, n_canals, N_BLOCKS).tolist() # Generate random kvector. 0 is not a good position in c_to_r_list
-    
+    if quasi_random == False or i==0: # Normal fully random block configurations
+        damLocation = np.random.randint(1, n_canals, N_BLOCKS).tolist() # Generate random kvector. 0 is not a good position in c_to_r_list
+    else:
+        prohibited_node_list = [i for i,_ in enumerate(oWTcanlist[1:]) if oWTcanlist[1:][i] < wt_canals[1:][i]]      # [1:] is to take the 0th element out of the loop
+        candidate_node_list = np.array([e for e in range(1, n_canals) if e not in prohibited_node_list]) # remove 0 from the range of possible canals
+        damLocation = np.random.choice(candidate_node_list, size=N_BLOCKS)
+
     if hand_made_dams:
         # HAND-MADE RULE OF DAM POSITIONS TO ADD:
         hand_picked_dams = (11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868)
@@ -172,8 +178,13 @@ for i in range(0,N_ITER):
     """
     Final printings
     """
+    if quasi_random == True:
+        fname = r'output/results_mc_quasi_3.txt'
+    else:
+        fname = r'output/results_mc_3.txt'
     if N_ITER > 20:
-        with open(r'output/results_mc_3.txt', 'a') as output_file:
+        
+        with open(fname, 'a') as output_file:
             output_file.write(
                                 "\n" + str(i) + "    " + str(dry_peat_volume) + "    "
                                 + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(DAYS) + "    "
