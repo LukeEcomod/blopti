@@ -53,7 +53,7 @@ class DryPeatVolumeMinimization(Annealer):
         self.state.append(dam_to_add)
 
     def energy(self):
-        self.wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, block_height,
+        self.wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, BLOCK_HEIGHT,
                                 self.state, CNM)
         
         wt_canal_arr = np.zeros((ny,nx)) # (nx,ny) array with wt canal height in corresponding nodes
@@ -144,7 +144,7 @@ sto_to_cut = sto_to_cut * catchment_mask.ravel()
 srfcanlist =[dem[coords] for coords in c_to_r_list]
 
 n_canals = len(c_to_r_list)
-block_height = 0.4 # water level of canal after placing dam.
+
 
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 
@@ -157,7 +157,7 @@ Initial configuration of blocks in canals
 ###########################################
 """
 iDamLocation = np.random.randint(1,n_canals,N_BLOCKS).tolist() # Generate random kvector
-iWTcanlist = utilities.place_dams(oWTcanlist, srfcanlist, block_height, iDamLocation, CNM)
+iWTcanlist = utilities.place_dams(oWTcanlist, srfcanlist, BLOCK_HEIGHT, iDamLocation, CNM)
 wt_canals = iWTcanlist[:]
 
 """

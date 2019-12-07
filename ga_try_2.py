@@ -23,7 +23,7 @@ parser = argparse.ArgumentParser(description='Run GA.')
 
 parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
-parser.add_argument('-n','--nopti', default=5, help='(int) Number of iterations of the optimization algorithm. Number of generations in GA. Default=100.', type=int)
+parser.add_argument('-n','--nopti', default=, help='(int) Number of iterations of the optimization algorithm. Number of generations in GA. Default=100.', type=int)
 parser.add_argument('-p', '--processes', default=2, help='(int) Number of parallel processes for the optimization', type=int)
 args = parser.parse_args()
 
