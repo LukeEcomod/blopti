@@ -17,6 +17,7 @@ plt.close('all')
 """
 
 fname_mc = r'results_mc_3.txt'
+fname_mc_quasi = r"results_mc_quasi_3.txt"
 fname_ga = r'results_ga_3.txt'
 fname_sa = r'results_sa_3.txt'
 
@@ -26,8 +27,10 @@ colnames_ga = ['dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'd
 #rename_cols_ga = {'day_month':'dry_peat_vol', 'niter':'ndams', 'c': 'niter', 'b':'days', 'blocks':'day_week', 'day_week':'month', 'days':'day_month', 'month':'time', 'ndams':'yr', 'a': 'b1', 'time':'b2', 'yr':'b3', 'dry_peat_vol':'b4'}
 
 mc_df = pd.read_csv(fname_mc, delim_whitespace=True, header=None, names=colnames, usecols=[0,1,2,3,4,5,6,7,8,9,10])
+mc_quasi_df = pd.read_csv(fname_mc_quasi, delim_whitespace=True, header=None, names=colnames, usecols=[0,1,2,3,4,5,6,7,8,9,10])
 ga_df = pd.read_csv(fname_ga, delim_whitespace=True, header=None, names=colnames_ga, usecols=[0,1,2,3,4,5,6,7,8])
 sa_df = pd.read_csv(fname_sa, delim_whitespace=True, header=None, names=colnames_sa, usecols=[0,1,2,3,4,5,6,7,8])
+
 
 """
  Get info out
@@ -44,6 +47,10 @@ mean_mc_plot_vol = [mc_plot_vol[mc_plot_vol.ndams == i]['dry_peat_vol'].mean()/d
 max_mc_plot_vol = [mc_plot_vol[mc_plot_vol.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams*100 for i in number_dams]
 min_mc_plot_vol = [mc_plot_vol[mc_plot_vol.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams*100 for i in number_dams]
 
+mean_mcquasi_plot_vol = [mc_quasi_df[mc_quasi_df.ndams == i]['dry_peat_vol'].mean()/dry_peat_vol_no_dams*100 for i in number_dams]
+max_mcquasi_plot_vol = [mc_quasi_df[mc_quasi_df.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams*100 for i in number_dams]
+min_mcquasi_plot_vol = [mc_quasi_df[mc_quasi_df.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams*100 for i in number_dams]
+
 
 sa_df.dry_peat_vol = sa_df.dry_peat_vol/dry_peat_vol_no_dams*100
 
@@ -55,6 +62,18 @@ sa_plot = sa_df.loc[sa_df['ndams'].isin(number_dams)]
 ga_plot = ga_df.loc[ga_df['ndams'].isin(number_dams)]
 
 
+# CWL and Volume dry peat from full optimiation
+ga_fullopti_cwl_vdp = np.array([[100.17000408172562, 206.5699918508545, 294.7300499916108, 413.46002569199203, 490.95001428128023, 611.140032672881, 630.9599639892541, 655.8200357675498, 741.6799679756032],
+                   [99.42081341, 98.86536757, 98.27517161, 97.69790191, 97.28177471,96.68626366, 96.60555668, 96.22210773, 95.83706336]])
+sa_fullopti_cwl_vdp = np.array([[88.14001469612094, 154.89002861976618, 239.2000149965306, 335.2400191068692, 335.7899886608159, 510.699984335907, 473.95000741482465, 545.1500374794063, 583.9700692176839],
+                   [99.48070425, 99.19026325, 98.81467022, 98.32784208, 98.11629296,97.55972738, 97.50128656, 97.10690771, 96.84186172]])
+    
+ga_simpleopti_cwl_vdp = np.array([[169.89998197, 289.469981575, 486.719960117],
+                                  [99.429750557, 99.028091737,  98.26186190]])
+
+rule_based_cwl_vdp = np.array([[24.620006227493246, 41.410006046295],
+                               [99.89676051674989, 99.77789666106682]])    
+
 """
  Plot V_dry_peat vs ndams
 """
@@ -62,11 +81,15 @@ ga_plot = ga_df.loc[ga_df['ndams'].isin(number_dams)]
 fig, ax = plt.subplots(1)
 ax.plot(number_dams, mean_mc_plot_vol, alpha=1.0, color='red', label='random mean')
 ax.fill_between(number_dams, max_mc_plot_vol, min_mc_plot_vol, facecolor='pink', alpha=0.7, label='random range')
+ax.plot(number_dams, mean_mcquasi_plot_vol, alpha=1.0, color='purple', label='quasi-random mean')
+ax.fill_between(number_dams, max_mcquasi_plot_vol, min_mcquasi_plot_vol, facecolor='purple', alpha=0.4, label='quasi-random range')
 ax.set_xlabel('Number of dams')
 ax.set_ylabel('Volume fraction of dry peat (%)')
 
 ax.scatter(x=sa_plot.ndams.to_numpy(), y=sa_plot.dry_peat_vol.to_numpy(), label='SA', alpha=0.8, color='orange')
 ax.scatter(x=ga_plot.ndams.to_numpy(), y=ga_plot.dry_peat_vol.to_numpy(), label='GA', alpha=0.5, color='blue')
+ax.scatter(x=number_dams[:len(ga_simpleopti_cwl_vdp[1])], y=ga_simpleopti_cwl_vdp[1], color='green', alpha=0.8, marker='x', label='Simple Optimization')
+ax.scatter(x=number_dams[:len(rule_based_cwl_vdp[1])], y=rule_based_cwl_vdp[1], color='black', alpha=0.8, marker='s', label='rule-based')
 plt.legend()
 
 #fname_fig = r'results_plot.png'
@@ -124,15 +147,14 @@ ax.set_ylabel('Volume fraction of dry peat (%)')
 """
 Plot correlation Vdry peat vs CWL change
 """
-# SA and GA computed one by one from block configurations
-ga_cwl = np.array([100.17000408172562, 206.5699918508545, 294.7300499916108, 413.46002569199203, 490.95001428128023, 611.140032672881, 630.9599639892541, 655.8200357675498, 741.6799679756032])
-sa_cwl = np.array([88.14001469612094, 154.89002861976618, 239.2000149965306, 335.2400191068692, 335.7899886608159, 510.699984335907, 473.95000741482465, 545.1500374794063, 583.9700692176839])
+
 mc_df3 = mc_df2[mc_df2['days'] == 3]
 
 fig, ax = plt.subplots(1)
 ax.scatter(x=mc_df3.water_changed_canals, y=mc_df3.dry_peat_vol/dry_peat_vol_no_dams*100, color='pink', alpha=0.7, s=1.5, label='random')
-ax.scatter(x=sa_cwl, y=np.sort(sa_plot.dry_peat_vol)[::-1], color='blue', alpha=0.5, label='SA')
-ax.scatter(x=ga_cwl, y=np.sort(ga_plot.dry_peat_vol)[::-1], color='orange', alpha=0.8, label='GA')
+ax.scatter(x=sa_fullopti_cwl_vdp[0], y=sa_fullopti_cwl_vdp[1], color='blue', alpha=0.5, label='SA')
+ax.scatter(x=ga_fullopti_cwl_vdp[0], y=ga_fullopti_cwl_vdp[1], color='orange', alpha=0.8, label='GA')
+ax.scatter(x=ga_simpleopti_cwl_vdp[0], y=ga_simpleopti_cwl_vdp[1], color='green', alpha=0.8, marker='x', label='Simple Optimization')
 ax.set_xlabel('CWL change')
 ax.set_ylabel('Volume fraction of dry peat (%)')
 plt.legend()
