@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='Run hydro without any optimization
 
 parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=0, help='(int) Number of blocks to locate. Default=5.', type=int)
-parser.add_argument('-n','--niter', default=2, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
+parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 
 DAYS = args.days
@@ -54,8 +54,8 @@ dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
-#params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
-params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
+#params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
 #params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
 
 
@@ -131,7 +131,7 @@ for i in range(0,N_ITER):
     if hand_made_dams:
         # HAND-MADE RULE OF DAM POSITIONS TO ADD:
         hand_picked_dams = (11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868) # rule-based approach
-        hand_picked_dams = [11170, 10237, 10514, 2932, 4794]
+        hand_picked_dams = [2654, 9257, 9089, 4373, 3189, 9211, 11017, 8756, 770, 3819, 7290, 4350, 5360, 5278, 8289, 5840, 2287, 7625, 7234, 2052, 908, 8371, 9532, 10419, 4011, 2390, 4818, 7930, 6244, 6379, 1465, 6293, 6083, 2884, 8389, 1901, 5649, 1710, 1497, 6974]
         damLocation = hand_picked_dams
     
     wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, BLOCK_HEIGHT, damLocation, CNM)

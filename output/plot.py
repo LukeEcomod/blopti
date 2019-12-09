@@ -68,8 +68,8 @@ ga_fullopti_cwl_vdp = np.array([[100.17000408172562, 206.5699918508545, 294.7300
 sa_fullopti_cwl_vdp = np.array([[88.14001469612094, 154.89002861976618, 239.2000149965306, 335.2400191068692, 335.7899886608159, 510.699984335907, 473.95000741482465, 545.1500374794063, 583.9700692176839],
                    [99.48070425, 99.19026325, 98.81467022, 98.32784208, 98.11629296,97.55972738, 97.50128656, 97.10690771, 96.84186172]])
     
-ga_simpleopti_cwl_vdp = np.array([[169.89998197, 289.469981575, 486.719960117],
-                                  [99.429750557, 99.028091737,  98.26186190]])
+ga_simpleopti_cwl_vdp = np.array([[169.89998197, 289.469981575, 486.719960117, 632.6099651813, 742.240028381],
+                                  [99.429750557, 99.028091737,  98.26186190, 97.71969008691086, 97.47046337112018]])
 
 rule_based_cwl_vdp = np.array([[24.620006227493246, 41.410006046295],
                                [99.89676051674989, 99.77789666106682]])    
@@ -150,6 +150,7 @@ Plot correlation Vdry peat vs CWL change
 
 mc_df3 = mc_df2[mc_df2['days'] == 3]
 
+
 fig, ax = plt.subplots(1)
 ax.scatter(x=mc_df3.water_changed_canals, y=mc_df3.dry_peat_vol/dry_peat_vol_no_dams*100, color='pink', alpha=0.7, s=1.5, label='random')
 ax.scatter(x=sa_fullopti_cwl_vdp[0], y=sa_fullopti_cwl_vdp[1], color='blue', alpha=0.5, label='SA')
@@ -158,6 +159,33 @@ ax.scatter(x=ga_simpleopti_cwl_vdp[0], y=ga_simpleopti_cwl_vdp[1], color='green'
 ax.set_xlabel('CWL change')
 ax.set_ylabel('Volume fraction of dry peat (%)')
 plt.legend()
+
+
+# Separated by number of blocks
+fig, axes = plt.subplots(3,3)
+axes = axes.flatten()
+for i, n_dams in enumerate(number_dams):
+    mc_reduced = mc_df3[ mc_df3['ndams'] == n_dams]
+    axes[i].scatter(x=mc_reduced.water_changed_canals, y=mc_reduced.dry_peat_vol/dry_peat_vol_no_dams*100, color='pink', alpha=0.7, s=1.5, label='random')
+    axes[i].scatter(x=ga_fullopti_cwl_vdp[0][i], y=ga_fullopti_cwl_vdp[1][i], color='orange', alpha=0.8, label='GA')
+    axes[i].scatter(x=sa_fullopti_cwl_vdp[0][i], y=sa_fullopti_cwl_vdp[1][i], color='blue', alpha=0.5, label='SA')
+
+    if i < len(ga_simpleopti_cwl_vdp[0]):
+        axes[i].scatter(x=ga_simpleopti_cwl_vdp[0][i], y=ga_simpleopti_cwl_vdp[1][i], color='green', alpha=0.8, marker='x', label='Simple Optimization')
+
+    axes[i].set_title(str(n_dams) + 'blocks')
+    axes[i].set_xlabel('CWL change')
+    axes[i].set_ylabel('Volume fraction of dry peat (%)')
+
+# legends for subplot
+handles, labels = ax.get_legend_handles_labels()
+fig.legend(handles, labels, loc='upper center')
+
+# only outer axes labels
+for ax in axes.flat:
+    ax.label_outer()
+
+
 
 
 plt.show()
