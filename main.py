@@ -26,9 +26,9 @@ Parse command-line arguments
 """
 parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
 
-parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
+parser.add_argument('-d','--days', default=4, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=0, help='(int) Number of blocks to locate. Default=5.', type=int)
-parser.add_argument('-n','--niter', default=2, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
+parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 
 DAYS = args.days
@@ -114,7 +114,7 @@ n_canals = len(c_to_r_list)
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
 
-hand_made_dams = True # compute performance of cherry-picked locations for dams.
+hand_made_dams = False # compute performance of cherry-picked locations for dams.
 quasi_random = False # Don't allow overlapping blocks
 """
 MonteCarlo
@@ -168,7 +168,7 @@ for i in range(0,N_ITER):
     
     dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
                                                       peat_type_mask=peat_type_masked, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
-                                                      diri_bc=DIRI_BC, neumann_bc = None, plotOpt=False, remove_ponding_water=True,
+                                                      diri_bc=DIRI_BC, neumann_bc = None, plotOpt=True, remove_ponding_water=True,
                                                       P=P, ET=ET, dt=TIMESTEP)
     
     water_blocked_canals = sum(np.subtract(wt_canals[1:], oWTcanlist[1:]))
