@@ -26,7 +26,7 @@ Parse command-line arguments
 """
 parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
 
-parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
+parser.add_argument('-d','--days', default=20, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=0, help='(int) Number of blocks to locate. Default=5.', type=int)
 parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
@@ -114,8 +114,8 @@ n_canals = len(c_to_r_list)
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
 
-hand_made_dams = True # compute performance of cherry-picked locations for dams.
-quasi_random = False # Don't allow overlapping blocks
+hand_made_dams = False # compute performance of cherry-picked locations for dams.
+quasi_random = False # Don't allow overlapping blocks. THIS DOESN*T WORK! iT ONLY WORKS IN SA, BECAUSE BLOCKS ARE ADDED INCREMENTALLY.
 """
 MonteCarlo
 """
@@ -131,7 +131,7 @@ for i in range(0,N_ITER):
     if hand_made_dams:
         # HAND-MADE RULE OF DAM POSITIONS TO ADD:
         hand_picked_dams = (11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868) # rule-based approach
-        hand_picked_dams = [4260, 9891, 8243, 6244, 7564, 3819, 6169, 7233, 9279, 8510, 693, 2117, 5227, 8058, 6419, 4373, 3765, 2678, 2225, 1448, 6840, 8915, 7971, 1496, 125, 6230, 5421, 9211, 1483, 11091, 5649, 763, 8770, 1931, 6555, 4945, 5801, 7339, 784, 4067, 7388, 2553, 9089, 3306, 1690, 2468, 9531, 8271, 6863, 5538]
+        hand_picked_dams = [6959, 901, 945, 9337, 10089, 7627, 1637, 7863, 7148, 7138, 3450, 1466, 420, 4608, 4303, 6908, 9405, 8289, 7343, 2534, 9349, 6272, 8770, 2430, 2654, 6225, 11152, 118, 4013, 3381, 6804, 6614, 7840, 9839, 5627, 3819, 7971, 402, 6974, 7584, 3188, 8316, 1521, 856, 770, 6504, 707, 5478, 5512, 1732, 3635, 1902, 2912, 9220, 1496, 11003, 8371, 10393, 2293, 4901, 5892, 6110, 2118, 4485, 6379, 10300, 6451, 5619, 9871, 9502, 1737, 4368, 7290, 9071, 11222, 3085, 2013, 5226, 597, 5038]
         damLocation = hand_picked_dams
     
     wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, BLOCK_HEIGHT, damLocation, CNM)
