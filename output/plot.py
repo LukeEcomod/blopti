@@ -83,17 +83,17 @@ rule_based_cwl_vdp = np.array([[24.620006227493246, 41.410006046295],
 """
 
 fig, ax = plt.subplots(1)
-ax.plot(number_dams, mean_mc_plot_vol, alpha=1.0, color='red', label='random mean')
-ax.fill_between(number_dams, max_mc_plot_vol, min_mc_plot_vol, facecolor='pink', alpha=0.7, label='random range')
+ax.fill_between(number_dams, max_mc_plot_vol, min_mc_plot_vol, facecolor='wheat', alpha=0.5, label='random range')
+ax.scatter(x=number_dams, y=mean_mc_plot_vol, alpha=0.8, color='darkorange', label='random mean', marker='P')
 #ax.plot(number_dams, mean_mcquasi_plot_vol, alpha=1.0, color='purple', label='quasi-random mean')
 #ax.fill_between(number_dams, max_mcquasi_plot_vol, min_mcquasi_plot_vol, facecolor='purple', alpha=0.4, label='quasi-random range')
-ax.set_xlabel('Number of dams')
+ax.set_xlabel('Number of blocks')
 ax.set_ylabel('Volume fraction of dry peat (%)')
 
-ax.scatter(x=sa_plot_ndams.ndams.to_numpy(), y=sa_plot_ndams.dry_peat_vol.to_numpy(), label='SA', alpha=0.8, color='orange')
-ax.scatter(x=ga_plot.ndams.to_numpy(), y=ga_plot.dry_peat_vol.to_numpy(), label='GA', alpha=0.5, color='blue')
-ax.scatter(x=number_dams[:len(ga_simpleopti_cwl_vdp[1])], y=ga_simpleopti_cwl_vdp[1], color='green', alpha=0.8, marker='x', label='Simple Optimization')
-ax.scatter(x=number_dams[:len(rule_based_cwl_vdp[1])], y=rule_based_cwl_vdp[1], color='black', alpha=0.8, marker='s', label='rule-based')
+ax.scatter(x=sa_plot_ndams.ndams.to_numpy(), y=sa_plot_ndams.dry_peat_vol.to_numpy(), label='SA', alpha=0.5, color='blue', marker='s')
+ax.scatter(x=ga_plot.ndams.to_numpy(), y=ga_plot.dry_peat_vol.to_numpy(), label='GA', alpha=0.7, color='red')
+ax.scatter(x=number_dams[:len(ga_simpleopti_cwl_vdp[1])], y=ga_simpleopti_cwl_vdp[1], color='green', alpha=0.8, marker='x', label='SO')
+ax.scatter(x=number_dams[:len(rule_based_cwl_vdp[1])], y=rule_based_cwl_vdp[1], color='black', alpha=0.8, label='rule-based')
 plt.legend()
 
 #fname_fig = r'results_plot.png'
@@ -110,16 +110,51 @@ Plot relative improvement
 mmc_improvement = np.sort(100. - np.array(mean_mc_plot_vol))
 sa_improvement = 100. - np.sort(sa_plot_ndams.dry_peat_vol)[::-1]
 ga_improvement = 100. - np.sort(ga_plot.dry_peat_vol)[::-1]
+simple_improvement = 100. -np.sort(ga_simpleopti_cwl_vdp[1])[::-1]
 
 fig, ax = plt.subplots(1)
 
-ax.set_xlabel('Number of dams')
+ax.set_xlabel('Number of blocks')
 ax.set_ylabel('Relative improvement wrt random mean')
 
-ax.scatter(x=number_dams, y=sa_improvement/mmc_improvement, label='SA', alpha=0.8, color='orange')
-ax.scatter(x=number_dams, y=ga_improvement/mmc_improvement, label='GA', alpha=0.5, color='blue')
-plt.legend()
+ax.scatter(x=number_dams, y=sa_improvement/mmc_improvement, label='SA', alpha=0.5, color='blue', marker='s')
+ax.scatter(x=number_dams, y=ga_improvement/mmc_improvement, label='GA', alpha=0.7, color='red')
+ax.scatter(x=number_dams, y=simple_improvement/mmc_improvement, color='green', alpha=0.8, marker='x', label='SO')
+plt.grid(True, which='major', axis='y')
+#plt.legend()
 
+
+"""
+Plot MB
+"""
+mb_dams = list(number_dams)
+mb_dams.append(0); mb_dams.sort()
+sa_vdry = np.sort(sa_plot_ndams.dry_peat_vol)[::-1]
+ga_vdry = np.sort(ga_plot.dry_peat_vol)[::-1]
+simple_vdry = np.sort(ga_simpleopti_cwl_vdp[1])[::-1]
+best_opti = [100.0]
+
+for i in range(0,len(mb_dams)-1):
+    opti_pool = [sa_vdry[i], ga_vdry[i], simple_vdry[i]]
+    best_opti.append( min(opti_pool))
+
+mean_rand =[100.0] + mean_mc_plot_vol
+mb_opti = []; mb_random = []
+for i in range(0,len(mb_dams)-1):
+    margben_opti = (-best_opti[i+1] + best_opti[i]) / (mb_dams[i+1] - mb_dams[i])
+    margben_random = (-mean_rand[i+1] + mean_rand[i]) / (mb_dams[i+1] - mb_dams[i])
+    mb_opti.append(margben_opti)
+    mb_random.append(margben_random)
+    
+mb_ga = mb_opti[0:2] + mb_opti[3:-2] # separation for the plot
+mb_sopti = [mb_opti[3]] + mb_opti[-2:]
+
+fig, ax = plt.subplots(1)
+ax.set_xlabel('d')
+ax.set_ylabel('MB(d) %')
+ax.scatter(x=mb_dams[0:2] + mb_dams[3:-3], y=mb_ga, label='GA', alpha=0.7, color='red')
+ax.scatter(x=[mb_dams[2]] + mb_dams[-3:-1], y=mb_sopti, color='green', alpha=0.8, marker='x', label='SO')
+ax.scatter(x=mb_dams[:-1], y=mb_random, alpha=0.8, color='darkorange', label='random mean', marker='P')
 
 
 """
@@ -148,9 +183,9 @@ for day in sorted(dpv.iterkeys()):
 #sns.boxplot(x=mc_df2.days, y=mc_df2.dry_peat_vol/dpv[3])  
     
 fig, ax = plt.subplots(1)
-ax.plot(days, mc_mean_dpv, alpha=1.0, color='red', label='random mean')
-ax.fill_between(days, mc_max_dpv, mc_min_dpv, facecolor='pink', alpha=0.7, label='random range')
-ax.scatter([3,5,10,20], sa_days, alpha = 0.8, color = 'orange', label='SA')
+ax.plot(days, mc_mean_dpv, alpha=0.8, color='darkorange', label='random mean', marker='P')
+ax.fill_between(days, mc_max_dpv, mc_min_dpv, facecolor='wheat', alpha=0.5, label='random range')
+ax.scatter([3,5,10,20], sa_days, label='SA', alpha=0.5, color='blue', marker='s')
 ax.set_xlabel('Number of dry days')
 ax.set_ylabel('Volume fraction of dry peat (%)')
 ax.set_title('20 blocks')
@@ -167,13 +202,34 @@ mc_df3 = mc_df2[mc_df2['days'] == 3]
 
 
 fig, ax = plt.subplots(1)
-ax.scatter(x=mc_df3.water_changed_canals, y=mc_df3.dry_peat_vol/dry_peat_vol_no_dams*100, color='pink', alpha=0.7, s=1.5, label='random')
-ax.scatter(x=sa_fullopti_cwl_vdp[0], y=sa_fullopti_cwl_vdp[1], color='blue', alpha=0.5, label='SA')
-ax.scatter(x=ga_fullopti_cwl_vdp[0], y=ga_fullopti_cwl_vdp[1], color='orange', alpha=0.8, label='GA')
-ax.scatter(x=ga_simpleopti_cwl_vdp[0], y=ga_simpleopti_cwl_vdp[1], color='green', alpha=0.8, marker='x', label='Simple Optimization')
+ax.scatter(x=mc_df3.water_changed_canals, y=mc_df3.dry_peat_vol/dry_peat_vol_no_dams*100, s=1.5, alpha=0.1, color='darkorange', label='random mean', marker='P')
+
+ax.scatter(x=sa_fullopti_cwl_vdp[0], y=sa_fullopti_cwl_vdp[1], label='SA', alpha=0.5, color='blue', marker='s')
+i=0
+for x, y in zip(sa_fullopti_cwl_vdp[0], sa_fullopti_cwl_vdp[1]):
+    plt.text(x, y, number_dams[i], color="blue", fontsize=12)
+    i = i+1
+    
+ax.scatter(x=ga_fullopti_cwl_vdp[0], y=ga_fullopti_cwl_vdp[1], label='GA', alpha=0.7, color='red')
+i=0
+for x, y in zip(ga_fullopti_cwl_vdp[0], ga_fullopti_cwl_vdp[1]):
+    plt.text(x, y, number_dams[i], color="red", fontsize=12)
+    i = i+1
+    
+ax.scatter(x=ga_simpleopti_cwl_vdp[0], y=ga_simpleopti_cwl_vdp[1], color='green', alpha=0.8, marker='x', label='SO')
+i=0
+for x, y in zip(ga_simpleopti_cwl_vdp[0], ga_simpleopti_cwl_vdp[1]):
+    plt.text(x, y, number_dams[i], color="green", fontsize=12)
+    i = i+1
+
 ax.set_xlabel('CWL change')
 ax.set_ylabel('Volume fraction of dry peat (%)')
-plt.legend()
+
+# Plot legend.
+lgnd = plt.legend(loc="lower left", scatterpoints=1, fontsize=10, framealpha=1.0)
+lgnd.legendHandles[0]._sizes = [30]
+lgnd.legendHandles[1]._sizes = [30]
+lgnd.legendHandles[0].set_alpha(1)
 
 
 # Separated by number of blocks
@@ -181,12 +237,12 @@ fig, axes = plt.subplots(3,3)
 axes = axes.flatten()
 for i, n_dams in enumerate(number_dams):
     mc_reduced = mc_df3[ mc_df3['ndams'] == n_dams]
-    axes[i].scatter(x=mc_reduced.water_changed_canals, y=mc_reduced.dry_peat_vol/dry_peat_vol_no_dams*100, color='pink', alpha=0.7, s=1.5, label='random')
-    axes[i].scatter(x=ga_fullopti_cwl_vdp[0][i], y=ga_fullopti_cwl_vdp[1][i], color='orange', alpha=0.8, label='GA')
-    axes[i].scatter(x=sa_fullopti_cwl_vdp[0][i], y=sa_fullopti_cwl_vdp[1][i], color='blue', alpha=0.5, label='SA')
+    axes[i].scatter(x=mc_reduced.water_changed_canals, y=mc_reduced.dry_peat_vol/dry_peat_vol_no_dams*100, s=1.5, alpha=0.5, color='darkorange', label='random mean', marker='P')
+    axes[i].scatter(x=ga_fullopti_cwl_vdp[0][i], y=ga_fullopti_cwl_vdp[1][i], label='GA', alpha=0.7, color='red')
+    axes[i].scatter(x=sa_fullopti_cwl_vdp[0][i], y=sa_fullopti_cwl_vdp[1][i], label='SA', alpha=0.5, color='blue', marker='s')
 
     if i < len(ga_simpleopti_cwl_vdp[0]):
-        axes[i].scatter(x=ga_simpleopti_cwl_vdp[0][i], y=ga_simpleopti_cwl_vdp[1][i], color='green', alpha=0.8, marker='x', label='Simple Optimization')
+        axes[i].scatter(x=ga_simpleopti_cwl_vdp[0][i], y=ga_simpleopti_cwl_vdp[1][i], color='green', alpha=0.8, marker='x', label='SO')
 
     axes[i].set_title(str(n_dams) + 'blocks')
     axes[i].set_xlabel('CWL change')
