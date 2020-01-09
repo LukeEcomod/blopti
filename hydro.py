@@ -219,7 +219,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
 
     avg_wt_over_time = []
     
-    
+    cumulative_Vdp = 0.
                                                              
     #********Finite volume computation******************
     for d in range(days):
@@ -272,21 +272,24 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
 
         # For some plots
         avg_wt_over_time.append(np.average(phi.value-ele))
-        
+    
+            
+        """ Volume of dry peat calc."""
+        not_peat = np.ones(shape=peat_type_mask.shape) # Not all soil is peat!
+        not_peat[peat_type_mask == 4] = 0 # NotPeat
+        not_peat[peat_type_mask == 5] = 0 # OpenWater
+        peat_vol_weights = utilities.PeatV_weight_calc(np.array(~dr * catchment_mask * not_peat, dtype=int))
+        dry_peat_volume = utilities.PeatVolume(peat_vol_weights, (ele-phi.value).reshape(ny,nx))
+        cumulative_Vdp = cumulative_Vdp + dry_peat_volume
+        print "Dry peat volume = ", dry_peat_volume 
+        print "Cumulative vdp = ", cumulative_Vdp
         
     if solve_mode=='steadystate': #solving in steadystate we remove water only at the very end
         if remove_ponding_water:                 
             s=np.where(phi.value>ele,ele,phi.value)                        # remove the surface water. This also removes phi in those masked values (for the plot only)
             phi.setValue(s)                                                # set new values for water table
     
-    
-    """ Volume of dry peat calc."""
-    not_peat = np.ones(shape=peat_type_mask.shape) # Not all soil is peat!
-    not_peat[peat_type_mask == 4] = 0 # NotPeat
-    not_peat[peat_type_mask == 5] = 0 # OpenWater
-    peat_vol_weights = utilities.PeatV_weight_calc(np.array(~dr * catchment_mask * not_peat, dtype=int))
-    dry_peat_volume = utilities.PeatVolume(peat_vol_weights, (ele-phi.value).reshape(ny,nx))
-#    print "Dry peat volume = ", dry_peat_volume     
+       
        
         # Areas with WT <-1.0; areas with WT >0
 #        plot_raster_by_value((ele-phi.value).reshape(ny,nx), title="ele-phi in the end, colour keys", bottom_value=0.5, top_value=0.01)
@@ -325,4 +328,4 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
 #    resulting_phi = phi.value.reshape(ny,nx)
 
 
-    return dry_peat_volume
+    return cumulative_Vdp
