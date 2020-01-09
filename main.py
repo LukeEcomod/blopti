@@ -27,8 +27,8 @@ Parse command-line arguments
 parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
 
 parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
-parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
-parser.add_argument('-n','--niter', default=2, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
+parser.add_argument('-b','--nblocks', default=0, help='(int) Number of blocks to locate. Default=5.', type=int)
+parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
 
 DAYS = args.days
@@ -54,8 +54,8 @@ dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
-params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
-#params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+#params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
+params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
 #params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
 
 
@@ -131,7 +131,7 @@ for i in range(0,N_ITER):
     if hand_made_dams:
         # HAND-MADE RULE OF DAM POSITIONS TO ADD:
         hand_picked_dams = (11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868) # rule-based approach
-        hand_picked_dams = [7234, 3288, 9282, 5994, 5359, 6546, 5528, 1466, 9071, 5229, 5476, 2832, 7885, 2220, 6908, 7041, 3426, 7290, 104, 783]
+        hand_picked_dams = [11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868]
         damLocation = hand_picked_dams
     
     wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, BLOCK_HEIGHT, damLocation, CNM)
@@ -173,7 +173,8 @@ for i in range(0,N_ITER):
     
     water_blocked_canals = sum(np.subtract(wt_canals[1:], oWTcanlist[1:]))
     
-    print('dry_peat_volume = ', dry_peat_volume, '\n',
+    cum_Vdp_nodams = 21088.453521509597
+    print('dry_peat_volume(%) = ', dry_peat_volume/cum_Vdp_nodams * 100, '\n',
           'water_blocked_canals = ', water_blocked_canals)
 
     """

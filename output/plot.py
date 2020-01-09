@@ -20,6 +20,7 @@ fname_mc = r'results_mc_3.txt'
 fname_mc_quasi = r"results_mc_quasi_3.txt"
 fname_ga = r'results_ga_3.txt'
 fname_sa = r'results_sa_3.txt'
+fname_summary = r'concise_output_opti.txt'
 
 colnames = ['i', 'dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr', 'water_changed_canals' ]
 colnames_sa = ['dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr' ]
@@ -30,6 +31,7 @@ mc_df = pd.read_csv(fname_mc, delim_whitespace=True, header=None, names=colnames
 mc_quasi_df = pd.read_csv(fname_mc_quasi, delim_whitespace=True, header=None, names=colnames, usecols=[0,1,2,3,4,5,6,7,8,9,10])
 ga_df = pd.read_csv(fname_ga, delim_whitespace=True, header=None, names=colnames_ga, usecols=[0,1,2,3,4,5,6,7,8])
 sa_df = pd.read_csv(fname_sa, delim_whitespace=True, header=None, names=colnames_sa, usecols=[0,1,2,3,4,5,6,7,8])
+summary_df = pd.read_csv(fname_summary, delim_whitespace=True)
 
 
 """
@@ -66,7 +68,7 @@ sa_plot_ndams = sa_plot[sa_plot['days']==3]
 ga_plot = ga_df.loc[ga_df['ndams'].isin(number_dams)]
 
 
-# CWL and Volume dry peat from full optimiation
+# CWL and Volume dry peat
 ga_fullopti_cwl_vdp = np.array([[100.17000408172562, 206.5699918508545, 294.7300499916108, 413.46002569199203, 490.95001428128023, 611.140032672881, 630.9599639892541, 655.8200357675498, 741.6799679756032],
                    [99.42081341, 98.86536757, 98.27517161, 97.69790191, 97.28177471,96.68626366, 96.60555668, 96.22210773, 95.83706336]])
 sa_fullopti_cwl_vdp = np.array([[88.14001469612094, 154.89002861976618, 239.2000149965306, 335.2400191068692, 335.7899886608159, 510.699984335907, 473.95000741482465, 545.1500374794063, 583.9700692176839],
@@ -76,8 +78,10 @@ ga_simpleopti_cwl_vdp = np.array([[169.89998197, 289.469981575, 486.719960117, 6
                                   [99.429750557, 99.028091737,  98.26186190, 97.71969008691086, 97.47046337112018, 96.8566965286157, 96.625790926368, 95.8517598466997, 95.649595692221]])
 
 rule_based_cwl_vdp = np.array([[24.620006227493246, 41.410006046295],
-                               [99.89676051674989, 99.77789666106682]])    
+                               [99.89676051674989, 99.77789666106682]])
 
+# For tomorrow: get this data rom summary_df by: 
+# summary_df[summary_df['mode'] == 'ga_simpleopti'] etc.
 """
  Plot V_dry_peat vs ndams
 """
