@@ -183,7 +183,7 @@ for i in range(0,N_ITER):
     if quasi_random == True:
         fname = r'output/results_mc_quasi_3.txt'
     else:
-        fname = r'output/results_mc_3.txt'
+        fname = r'output/results_mc_3_cumulative.txt'
     if N_ITER > 20:
         
         with open(fname, 'a') as output_file:
