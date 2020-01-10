@@ -1,4 +1,4 @@
-mode d CWLchange Vdp_noncumulative Vdp_cumulative
+mode ndams CWLchange dry_peat_vol_noncumulative dry_peat_vol_cumulative
 
 Vdp_nodams 0 0 8255.131496485912 21088.453521509597
 

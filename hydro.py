@@ -281,8 +281,8 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         peat_vol_weights = utilities.PeatV_weight_calc(np.array(~dr * catchment_mask * not_peat, dtype=int))
         dry_peat_volume = utilities.PeatVolume(peat_vol_weights, (ele-phi.value).reshape(ny,nx))
         cumulative_Vdp = cumulative_Vdp + dry_peat_volume
-        print "Dry peat volume = ", dry_peat_volume 
-        print "Cumulative vdp = ", cumulative_Vdp
+#        print "Dry peat volume = ", dry_peat_volume 
+#        print "Cumulative vdp = ", cumulative_Vdp
         
     if solve_mode=='steadystate': #solving in steadystate we remove water only at the very end
         if remove_ponding_water:                 

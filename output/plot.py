@@ -62,23 +62,30 @@ ga_df.dry_peat_vol = ga_df.dry_peat_vol/dry_peat_vol_no_dams*100
 
 
 # Choose to plot ndams from number_dams above
-sa_plot = sa_df.loc[sa_df['ndams'].isin(number_dams)]
-sa_plot_ndams = sa_plot[sa_plot['days']==3]
+sa_plot = summary_df[summary_df['mode'] == 'sa_fullopti']
 
-ga_plot = ga_df.loc[ga_df['ndams'].isin(number_dams)]
+ga_plot = summary_df[summary_df['mode'] == 'ga_fullopti']
 
 
 # CWL and Volume dry peat
-ga_fullopti_cwl_vdp = np.array([[100.17000408172562, 206.5699918508545, 294.7300499916108, 413.46002569199203, 490.95001428128023, 611.140032672881, 630.9599639892541, 655.8200357675498, 741.6799679756032],
-                   [99.42081341, 98.86536757, 98.27517161, 97.69790191, 97.28177471,96.68626366, 96.60555668, 96.22210773, 95.83706336]])
-sa_fullopti_cwl_vdp = np.array([[88.14001469612094, 154.89002861976618, 239.2000149965306, 335.2400191068692, 335.7899886608159, 510.699984335907, 473.95000741482465, 545.1500374794063, 583.9700692176839],
-                   [99.48070425, 99.19026325, 98.81467022, 98.32784208, 98.11629296,97.55972738, 97.50128656, 97.10690771, 96.84186172]])
-    
-ga_simpleopti_cwl_vdp = np.array([[169.89998197, 289.469981575, 486.719960117, 632.6099651813, 742.240028381, 846.459938741, 931.629919863, 1040.68997881, 1085.7399986],
-                                  [99.429750557, 99.028091737,  98.26186190, 97.71969008691086, 97.47046337112018, 96.8566965286157, 96.625790926368, 95.8517598466997, 95.649595692221]])
+#ga_fullopti_cwl_vdp = np.array([[100.17000408172562, 206.5699918508545, 294.7300499916108, 413.46002569199203, 490.95001428128023, 611.140032672881, 630.9599639892541, 655.8200357675498, 741.6799679756032],
+#                   [99.42081341, 98.86536757, 98.27517161, 97.69790191, 97.28177471,96.68626366, 96.60555668, 96.22210773, 95.83706336]])
+#sa_fullopti_cwl_vdp = np.array([[88.14001469612094, 154.89002861976618, 239.2000149965306, 335.2400191068692, 335.7899886608159, 510.699984335907, 473.95000741482465, 545.1500374794063, 583.9700692176839],
+#                   [99.48070425, 99.19026325, 98.81467022, 98.32784208, 98.11629296,97.55972738, 97.50128656, 97.10690771, 96.84186172]])
+#    
+#ga_simpleopti_cwl_vdp = np.array([[169.89998197, 289.469981575, 486.719960117, 632.6099651813, 742.240028381, 846.459938741, 931.629919863, 1040.68997881, 1085.7399986],
+#                                  [99.429750557, 99.028091737,  98.26186190, 97.71969008691086, 97.47046337112018, 96.8566965286157, 96.625790926368, 95.8517598466997, 95.649595692221]])
+#rule_based_cwl_vdp = np.array([[24.620006227493246, 41.410006046295],
+#                               [99.89676051674989, 99.77789666106682]])
 
-rule_based_cwl_vdp = np.array([[24.620006227493246, 41.410006046295],
-                               [99.89676051674989, 99.77789666106682]])
+ga_fullopti_cwl_vdp = np.array([np.array(summary_df[summary_df['mode'] == 'ga_fullopti'].CWLchange),
+                                  np.array(summary_df[summary_df['mode'] == 'ga_fullopti'].dry_peat_vol_cumulative)])
+sa_fullopti_cwl_vdp = np.array([np.array(summary_df[summary_df['mode'] == 'sa_fullopti'].CWLchange),
+                                  np.array(summary_df[summary_df['mode'] == 'sa_fullopti'].dry_peat_vol_cumulative)])
+ga_simpleopti_cwl_vdp = np.array([np.array(summary_df[summary_df['mode'] == 'ga_simpleopti'].CWLchange),
+                                  np.array(summary_df[summary_df['mode'] == 'ga_simpleopti'].dry_peat_vol_cumulative)])
+rule_based_cwl_vdp = np.array([np.array(summary_df[summary_df['mode'] == 'rule_based'].CWLchange),
+                                  np.array(summary_df[summary_df['mode'] == 'rule_based'].dry_peat_vol_cumulative)])
 
 # For tomorrow: get this data rom summary_df by: 
 # summary_df[summary_df['mode'] == 'ga_simpleopti'] etc.
@@ -94,8 +101,8 @@ ax.scatter(x=number_dams, y=mean_mc_plot_vol, alpha=0.8, color='darkorange', lab
 ax.set_xlabel('Number of blocks')
 ax.set_ylabel('Volume fraction of dry peat (%)')
 
-ax.scatter(x=sa_plot_ndams.ndams.to_numpy(), y=sa_plot_ndams.dry_peat_vol.to_numpy(), label='SA', alpha=0.5, color='blue', marker='s')
-ax.scatter(x=ga_plot.ndams.to_numpy(), y=ga_plot.dry_peat_vol.to_numpy(), label='GA', alpha=0.7, color='red')
+ax.scatter(x=sa_plot.ndams.to_numpy(), y=sa_plot.dry_peat_vol_cumulative.to_numpy(), label='SA', alpha=0.5, color='blue', marker='s')
+ax.scatter(x=ga_plot.ndams.to_numpy(), y=ga_plot.dry_peat_vol_cumulative.to_numpy(), label='GA', alpha=0.7, color='red')
 ax.scatter(x=number_dams[:len(ga_simpleopti_cwl_vdp[1])], y=ga_simpleopti_cwl_vdp[1], color='green', alpha=0.8, marker='x', label='SO')
 ax.scatter(x=number_dams[:len(rule_based_cwl_vdp[1])], y=rule_based_cwl_vdp[1], color='black', alpha=0.8, label='rule-based')
 plt.legend()
@@ -112,8 +119,8 @@ plt.legend()
 Plot relative improvement
 """
 mmc_improvement = np.sort(100. - np.array(mean_mc_plot_vol))
-sa_improvement = 100. - np.sort(sa_plot_ndams.dry_peat_vol)[::-1]
-ga_improvement = 100. - np.sort(ga_plot.dry_peat_vol)[::-1]
+sa_improvement = 100. - np.sort(sa_plot.dry_peat_vol_cumulative)[::-1]
+ga_improvement = 100. - np.sort(ga_plot.dry_peat_vol_cumulative)[::-1]
 simple_improvement = 100. -np.sort(ga_simpleopti_cwl_vdp[1])[::-1]
 
 fig, ax = plt.subplots(1)
@@ -133,8 +140,8 @@ Plot MB
 """
 mb_dams = list(number_dams)
 mb_dams.append(0); mb_dams.sort()
-sa_vdry = np.sort(sa_plot_ndams.dry_peat_vol)[::-1]
-ga_vdry = np.sort(ga_plot.dry_peat_vol)[::-1]
+sa_vdry = np.sort(sa_plot.dry_peat_vol_cumulative)[::-1]
+ga_vdry = np.sort(ga_plot.dry_peat_vol_cumulative)[::-1]
 simple_vdry = np.sort(ga_simpleopti_cwl_vdp[1])[::-1]
 best_opti = [100.0]
 
@@ -150,15 +157,15 @@ for i in range(0,len(mb_dams)-1):
     mb_opti.append(margben_opti)
     mb_random.append(margben_random)
     
-mb_ga = mb_opti[0:2] + mb_opti[3:-2] # separation for the plot
-mb_sopti = [mb_opti[3]] + mb_opti[-2:]
+mb_ga = mb_opti[0:-2] # separation for the plot
+mb_sopti = mb_opti[-2:]
 
 fig, ax = plt.subplots(1)
 ax.set_xlabel('d')
 ax.set_ylabel('MB(d) %')
-ax.scatter(x=mb_dams[0:2] + mb_dams[3:-3], y=mb_ga, label='GA', alpha=0.7, color='red')
-ax.scatter(x=[mb_dams[2]] + mb_dams[-3:-1], y=mb_sopti, color='green', alpha=0.8, marker='x', label='SO')
-ax.scatter(x=mb_dams[:-1], y=mb_random, alpha=0.8, color='darkorange', label='random mean', marker='P')
+ax.scatter(x= mb_dams[0:-3], y=mb_ga, label='GA', alpha=0.7, color='red')
+ax.scatter(x= mb_dams[-3:-1], y=mb_sopti, color='green', alpha=0.8, marker='x', label='SO')
+ax.scatter(x= mb_dams[:-1], y=mb_random, alpha=0.8, color='darkorange', label='random mean', marker='P')
 
 
 """
