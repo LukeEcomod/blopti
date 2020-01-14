@@ -55,8 +55,8 @@ can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
 #params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
-params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
-#params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
+#params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
 
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
@@ -114,7 +114,7 @@ n_canals = len(c_to_r_list)
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
 
-hand_made_dams = True # compute performance of cherry-picked locations for dams.
+hand_made_dams = False # compute performance of cherry-picked locations for dams.
 quasi_random = False # Don't allow overlapping blocks
 """
 MonteCarlo
