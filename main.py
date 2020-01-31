@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 #import argparse
 import time
 
-import preprocess_data,  utilities, hydro, hydro_utils
+import preprocess_data,  utilities, hydro, hydro_utils, read
 
 
 plt.close("all")
@@ -26,7 +26,7 @@ Parse command-line arguments
 """
 parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
 
-parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
+parser.add_argument('-d','--days', default=366, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=0, help='(int) Number of blocks to locate. Default=5.', type=int)
 parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
@@ -54,7 +54,8 @@ dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
-params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
+#params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
+params_fn = r"C:\Users\03125327\github\dd_winrock\data\params.xlsx" # Luke NEW
 #params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
 #params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
 
@@ -145,6 +146,11 @@ for i in range(0,N_ITER):
     
     boundary_arr = boundary_mask * (dem - DIRI_BC) # constant Dirichlet value in the boundaries
     
+    P = read.read_precipitation()
+#    P = 0.0
+    ET = ET * np.ones(shape=P.shape)
+#    ET = ET
+    
     ele = dem * catchment_mask
     
     # Get a pickled phi solution (not ele-phi!) computed before without blocks, independently,
@@ -166,7 +172,7 @@ for i in range(0,N_ITER):
         wt_canal_arr[coords] = wt_canals[canaln] 
     
     
-    dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
+    dry_peat_volume, wt_track_drained, wt_track_notdrained = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
                                                       peat_type_mask=peat_type_masked, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
                                                       diri_bc=DIRI_BC, neumann_bc = None, plotOpt=False, remove_ponding_water=True,
                                                       P=P, ET=ET, dt=TIMESTEP)
