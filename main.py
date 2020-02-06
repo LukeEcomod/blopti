@@ -115,7 +115,7 @@ n_canals = len(c_to_r_list)
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
 
-hand_made_dams = True # compute performance of cherry-picked locations for dams.
+hand_made_dams = False # compute performance of cherry-picked locations for dams.
 quasi_random = False # Don't allow overlapping blocks
 """
 MonteCarlo
@@ -142,7 +142,7 @@ for i in range(0,N_ITER):
     #########################################
     """
     ny, nx = dem.shape
-    dx = 1.; dy = 1. # metres per pixel  
+    dx = 1.; dy = 1. # metres per pixel  (Actually, pixel size is 100m x 100m, so all units have to be converted afterwards)
     
     boundary_arr = boundary_mask * (dem - DIRI_BC) # constant Dirichlet value in the boundaries
     
@@ -172,7 +172,7 @@ for i in range(0,N_ITER):
         wt_canal_arr[coords] = wt_canals[canaln] 
     
     
-    dry_peat_volume, wt_track_drained, wt_track_notdrained = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
+    dry_peat_volume, wt_track_drained, wt_track_notdrained, avg_wt_over_time = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
                                                       peat_type_mask=peat_type_masked, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
                                                       diri_bc=DIRI_BC, neumann_bc = None, plotOpt=False, remove_ponding_water=True,
                                                       P=P, ET=ET, dt=TIMESTEP)
@@ -201,3 +201,10 @@ for i in range(0,N_ITER):
 
 
 
+plt.figure()
+plt.plot(range(0,DAYS), wt_track_drained, label='close to drained')
+plt.plot(range(0,DAYS), wt_track_notdrained, label='away from drained')
+plt.plot(range(0,DAYS), avg_wt_over_time, label='average')
+plt.xlabel('time(days)'); plt.ylabel('WTD (m)')
+plt.legend()
+plt.show()

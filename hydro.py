@@ -215,7 +215,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     
     #********************************************************
                                                        
-    max_sweeps = 1 # inner loop.
+    max_sweeps = 10 # inner loop.
     
     avg_wt_over_time = []
     wt_track_drained = []
@@ -227,7 +227,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     for d in range(days):
         
         if type(P) == type(ele): # assume it is a numpy array
-            source.setValue((P[d]-ET[d])* 10. *np.ones(ny*nx))                         # source/sink, in mm/day. The factor of 10 takes into account that there are 100 x 100 m^2 in one pixel
+            source.setValue((P[d]-ET[d])* .001 *np.ones(ny*nx))                         # source/sink, in mm/day. The factor of 10^-3 takes into account that there are 100 x 100 m^2 in one pixel
             print "(d,P) = ", (d, (P[d]-ET[d])* 10.)
         else:
             source.setValue((P-ET)* 10. *np.ones(ny*nx))
@@ -331,4 +331,4 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
 #    resulting_phi = phi.value.reshape(ny,nx)
 
 
-    return cumulative_Vdp, wt_track_drained, wt_track_notdrained
+    return cumulative_Vdp, wt_track_drained, wt_track_notdrained, avg_wt_over_time
