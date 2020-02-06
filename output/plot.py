@@ -8,7 +8,8 @@ Created on Fri Oct 11 09:40:13 2019
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
+
+
 
 plt.close('all')
 
@@ -268,6 +269,42 @@ fig.legend(handles, labels, loc='upper center')
 for ax in axes.flat:
     ax.label_outer()
 
+"""
+Plot yearly WTD and rainfall
+"""
+rainfall_fn = r"C:\Users\03125327\github\dd_winrock\data\2012_rainfall.xlsx"
+df_precip = pd.read_excel(rainfall_fn, names=['', 'RAW_DATA','Fill_nodata','','','','',''])
+
+fname_wtd_0 = r'C:\Users\03125327\github\dd_winrock\output\wtd_year.txt'
+df_wtd_0 = pd.read_csv(fname_wtd_0, delim_whitespace=True, header=0, skiprows=2)
+fname_wtd_80 = r'C:\Users\03125327\github\dd_winrock\output\wtd_year_80.txt'
+df_wtd_80 = pd.read_csv(fname_wtd_80, delim_whitespace=True, header=0, skiprows=2)
+
+fig, ax1 = plt.subplots()
+
+ax1.margins(x=0)
+ax1.set_ylabel('WTD (m)')
+
+ax1.plot(df_wtd_0['notdrained'].index, df_wtd_0['notdrained'].values, label='not drained, 0 and 80 blocks')
+ax1.plot(df_wtd_80['mean'].index, df_wtd_80['mean'].values, label='$\zeta$, 80 blocks')
+ax1.plot(df_wtd_0['mean'].index, df_wtd_0['mean'].values, label='$\zeta$, 0 blocks')
+ax1.plot(df_wtd_80['drained'].index, df_wtd_80['drained'].values, label='drained; 80 blocks')
+ax1.plot(df_wtd_0['drained'].index, df_wtd_0['drained'].values, label='drained, 0 blocks')
+
+#ax1.plot(df_wtd_80['notdrained'].index, df_wtd_80['notdrained'].values)
+
+
+plt.grid(True, axis='y', color='grey', alpha=0.4)
+leg = plt.legend()
+for lh in leg.legendHandles:
+    lh._legmarker.set_alpha(1)
+
+
+ax2 = ax1.twinx()
+ax2.margins(x=0)
+
+ax2.set_ylabel('Rainfall intensity, P (mm/day)')
+plt.bar(x=df_precip['Fill_nodata'].index, height=df_precip['Fill_nodata'].values, color='grey', alpha=0.3, width=1)
 
 
 

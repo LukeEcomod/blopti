@@ -115,7 +115,7 @@ n_canals = len(c_to_r_list)
 # HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
 
-hand_made_dams = False # compute performance of cherry-picked locations for dams.
+hand_made_dams = True # compute performance of cherry-picked locations for dams.
 quasi_random = False # Don't allow overlapping blocks
 """
 MonteCarlo
@@ -198,8 +198,18 @@ for i in range(0,N_ITER):
                                 + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(DAYS) + "    "
                                 + str(time.ctime()) + "    " + str(water_blocked_canals)
                               )
-
-
+"""
+Save WTD data if simulating a year
+"""
+fname = r'output/wtd_year_' + str(N_BLOCKS) + '.txt'
+if DAYS > 300:
+   with open(fname, 'a') as output_file:
+       output_file.write("\n %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n" +
+                             str(time.ctime()) + " nblocks = " + str(N_BLOCKS) + " ET = " + str(ET[0]) +
+                             '\n' + 'drained notdrained mean'
+                             )
+       for i in range(len(wt_track_drained)): 
+           output_file.write( "\n" + str(wt_track_drained[i]) + " " + str(wt_track_notdrained[i]) + " " + str(avg_wt_over_time[i]))
 
 plt.figure()
 plt.plot(range(0,DAYS), wt_track_drained, label='close to drained')

@@ -217,7 +217,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
                                                        
     max_sweeps = 10 # inner loop.
     
-    avg_wt_over_time = []
+    avg_wt = []
     wt_track_drained = []
     wt_track_notdrained = []
     
@@ -270,7 +270,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
                 print "Some value in D is negative!"
 
         # For some plots
-        avg_wt_over_time.append(np.average(phi.value-ele))
+        avg_wt.append(np.average(phi.value-ele))
         wt_track_drained.append((phi.value - ele).reshape(ny,nx)[track_WT_drained_area])
         wt_track_notdrained.append((phi.value - ele).reshape(ny,nx)[track_WT_notdrained_area])
     
@@ -316,7 +316,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         axes[0,1].set(title='C')
         axes[1,0].plot()
         axes[1,0].set(title="Nothing")
-        axes[1,1].plot(avg_wt_over_time)
+        axes[1,1].plot(avg_wt)
         axes[1,1].set(title="avg_wt_over_time")
         
         # plot surface in cross-section
@@ -331,4 +331,4 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
 #    resulting_phi = phi.value.reshape(ny,nx)
 
 
-    return cumulative_Vdp, wt_track_drained, wt_track_notdrained, avg_wt_over_time
+    return cumulative_Vdp, wt_track_drained, wt_track_notdrained, avg_wt
