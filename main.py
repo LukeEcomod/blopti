@@ -131,7 +131,7 @@ for i in range(0,N_ITER):
     if hand_made_dams:
         # HAND-MADE RULE OF DAM POSITIONS TO ADD:
         hand_picked_dams = (11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868) # rule-based approach
-        hand_picked_dams = [11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868]
+        hand_picked_dams =  [11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868]
         damLocation = hand_picked_dams
     
     wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, BLOCK_HEIGHT, damLocation, CNM)
