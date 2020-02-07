@@ -8,7 +8,8 @@ Created on Fri Oct 11 09:40:13 2019
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
+
+
 
 plt.close('all')
 
@@ -17,6 +18,7 @@ plt.close('all')
 """
 
 fname_mc = r'results_mc_3.txt'
+fname_mc_cum = r'results_mc_3_cumulative.txt'
 fname_mc_quasi = r"results_mc_quasi_3.txt"
 fname_ga = r'results_ga_3.txt'
 fname_sa = r'results_sa_3.txt'
@@ -27,7 +29,7 @@ colnames_sa = ['dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'd
 colnames_ga = ['dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'day_month', 'time', 'yr' ]
 #rename_cols_ga = {'day_month':'dry_peat_vol', 'niter':'ndams', 'c': 'niter', 'b':'days', 'blocks':'day_week', 'day_week':'month', 'days':'day_month', 'month':'time', 'ndams':'yr', 'a': 'b1', 'time':'b2', 'yr':'b3', 'dry_peat_vol':'b4'}
 
-mc_df = pd.read_csv(fname_mc, delim_whitespace=True, header=None, names=colnames, usecols=[0,1,2,3,4,5,6,7,8,9,10])
+mc_df = pd.read_csv(fname_mc_cum, delim_whitespace=True, header=None, names=colnames, usecols=[0,1,2,3,4,5,6,7,8,9,10])
 mc_quasi_df = pd.read_csv(fname_mc_quasi, delim_whitespace=True, header=None, names=colnames, usecols=[0,1,2,3,4,5,6,7,8,9,10])
 ga_df = pd.read_csv(fname_ga, delim_whitespace=True, header=None, names=colnames_ga, usecols=[0,1,2,3,4,5,6,7,8])
 sa_df = pd.read_csv(fname_sa, delim_whitespace=True, header=None, names=colnames_sa, usecols=[0,1,2,3,4,5,6,7,8])
@@ -40,7 +42,7 @@ summary_df = pd.read_csv(fname_summary, delim_whitespace=True)
 
 #dry_peat_vol_no_dams = 40191.730578848255 # normalization value OLD
 #dry_peat_vol_no_dams = 7650.495525801664 # normalization value after 3 days. 2 December
-dry_peat_vol_no_dams = 8255.131496485912 # normalization value after 3 days. 6 December. Correct peat depth
+dry_peat_vol_no_dams = summary_df['dry_peat_vol_cumulative'][0]
 number_dams = (5,10,20, 30, 40, 50, 60, 70, 80)
 
 mc_df = mc_df[mc_df.i != 0]
@@ -267,6 +269,42 @@ fig.legend(handles, labels, loc='upper center')
 for ax in axes.flat:
     ax.label_outer()
 
+"""
+Plot yearly WTD and rainfall
+"""
+rainfall_fn = r"C:\Users\03125327\github\dd_winrock\data\2012_rainfall.xlsx"
+df_precip = pd.read_excel(rainfall_fn, names=['', 'RAW_DATA','Fill_nodata','','','','',''])
+
+fname_wtd_0 = r'C:\Users\03125327\github\dd_winrock\output\wtd_year.txt'
+df_wtd_0 = pd.read_csv(fname_wtd_0, delim_whitespace=True, header=0, skiprows=2)
+fname_wtd_80 = r'C:\Users\03125327\github\dd_winrock\output\wtd_year_80.txt'
+df_wtd_80 = pd.read_csv(fname_wtd_80, delim_whitespace=True, header=0, skiprows=2)
+
+fig, ax1 = plt.subplots()
+
+ax1.margins(x=0)
+ax1.set_ylabel('WTD (m)')
+
+ax1.plot(df_wtd_0['notdrained'].index, df_wtd_0['notdrained'].values, label='not drained, 0 and 80 blocks')
+ax1.plot(df_wtd_80['mean'].index, df_wtd_80['mean'].values, label='$\zeta$, 80 blocks')
+ax1.plot(df_wtd_0['mean'].index, df_wtd_0['mean'].values, label='$\zeta$, 0 blocks')
+ax1.plot(df_wtd_80['drained'].index, df_wtd_80['drained'].values, label='drained; 80 blocks')
+ax1.plot(df_wtd_0['drained'].index, df_wtd_0['drained'].values, label='drained, 0 blocks')
+
+#ax1.plot(df_wtd_80['notdrained'].index, df_wtd_80['notdrained'].values)
+
+
+plt.grid(True, axis='y', color='grey', alpha=0.4)
+leg = plt.legend()
+for lh in leg.legendHandles:
+    lh._legmarker.set_alpha(1)
+
+
+ax2 = ax1.twinx()
+ax2.margins(x=0)
+
+ax2.set_ylabel('Rainfall intensity, P (mm/day)')
+plt.bar(x=df_precip['Fill_nodata'].index, height=df_precip['Fill_nodata'].values, color='grey', alpha=0.3, width=1)
 
 
 

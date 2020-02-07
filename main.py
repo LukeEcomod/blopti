@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 #import argparse
 import time
 
-import preprocess_data,  utilities, hydro, hydro_utils
+import preprocess_data,  utilities, hydro, hydro_utils, read
 
 
 plt.close("all")
@@ -26,7 +26,7 @@ Parse command-line arguments
 """
 parser = argparse.ArgumentParser(description='Run hydro without any optimization.')
 
-parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
+parser.add_argument('-d','--days', default=366, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=0, help='(int) Number of blocks to locate. Default=5.', type=int)
 parser.add_argument('-n','--niter', default=1, help='(int) Number of repetitions of the whole computation. Default=10', type=int)
 args = parser.parse_args()
@@ -55,7 +55,8 @@ can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
 #params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
-params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
+params_fn = r"C:\Users\03125327\github\dd_winrock\data\params.xlsx" # Luke NEW
+#params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
 #params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
 
 
@@ -131,7 +132,7 @@ for i in range(0,N_ITER):
     if hand_made_dams:
         # HAND-MADE RULE OF DAM POSITIONS TO ADD:
         hand_picked_dams = (11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868) # rule-based approach
-        hand_picked_dams =  [11170, 10237, 10514, 2932, 4794, 8921, 4785, 5837, 7300, 6868]
+        hand_picked_dams = [6959, 901, 945, 9337, 10089, 7627, 1637, 7863, 7148, 7138, 3450, 1466, 420, 4608, 4303, 6908, 9405, 8289, 7343, 2534, 9349, 6272, 8770, 2430, 2654, 6225, 11152, 118, 4013, 3381, 6804, 6614, 7840, 9839, 5627, 3819, 7971, 402, 6974, 7584, 3188, 8316, 1521, 856, 770, 6504, 707, 5478, 5512, 1732, 3635, 1902, 2912, 9220, 1496, 11003, 8371, 10393, 2293, 4901, 5892, 6110, 2118, 4485, 6379, 10300, 6451, 5619, 9871, 9502, 1737, 4368, 7290, 9071, 11222, 3085, 2013, 5226, 597, 5038]
         damLocation = hand_picked_dams
     
     wt_canals = utilities.place_dams(oWTcanlist, srfcanlist, BLOCK_HEIGHT, damLocation, CNM)
@@ -141,9 +142,14 @@ for i in range(0,N_ITER):
     #########################################
     """
     ny, nx = dem.shape
-    dx = 1.; dy = 1. # metres per pixel  
+    dx = 1.; dy = 1. # metres per pixel  (Actually, pixel size is 100m x 100m, so all units have to be converted afterwards)
     
     boundary_arr = boundary_mask * (dem - DIRI_BC) # constant Dirichlet value in the boundaries
+    
+    P = read.read_precipitation()
+#    P = 0.0
+    ET = ET * np.ones(shape=P.shape)
+#    ET = ET
     
     ele = dem * catchment_mask
     
@@ -166,7 +172,7 @@ for i in range(0,N_ITER):
         wt_canal_arr[coords] = wt_canals[canaln] 
     
     
-    dry_peat_volume = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
+    dry_peat_volume, wt_track_drained, wt_track_notdrained, avg_wt_over_time = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
                                                       peat_type_mask=peat_type_masked, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
                                                       diri_bc=DIRI_BC, neumann_bc = None, plotOpt=False, remove_ponding_water=True,
                                                       P=P, ET=ET, dt=TIMESTEP)
@@ -174,7 +180,7 @@ for i in range(0,N_ITER):
     water_blocked_canals = sum(np.subtract(wt_canals[1:], oWTcanlist[1:]))
     
     cum_Vdp_nodams = 21088.453521509597
-    print('dry_peat_volume(%) = ', dry_peat_volume/cum_Vdp_nodams * 100, '\n',
+    print('dry_peat_volume(%) = ', dry_peat_volume/cum_Vdp_nodams * 100. , '\n',
           'water_blocked_canals = ', water_blocked_canals)
 
     """
@@ -192,6 +198,23 @@ for i in range(0,N_ITER):
                                 + str(N_BLOCKS) + "    " + str(N_ITER) + "    " + str(DAYS) + "    "
                                 + str(time.ctime()) + "    " + str(water_blocked_canals)
                               )
+"""
+Save WTD data if simulating a year
+"""
+fname = r'output/wtd_year_' + str(N_BLOCKS) + '.txt'
+if DAYS > 300:
+   with open(fname, 'a') as output_file:
+       output_file.write("\n %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n" +
+                             str(time.ctime()) + " nblocks = " + str(N_BLOCKS) + " ET = " + str(ET[0]) +
+                             '\n' + 'drained notdrained mean'
+                             )
+       for i in range(len(wt_track_drained)): 
+           output_file.write( "\n" + str(wt_track_drained[i]) + " " + str(wt_track_notdrained[i]) + " " + str(avg_wt_over_time[i]))
 
-
-
+plt.figure()
+plt.plot(range(0,DAYS), wt_track_drained, label='close to drained')
+plt.plot(range(0,DAYS), wt_track_notdrained, label='away from drained')
+plt.plot(range(0,DAYS), avg_wt_over_time, label='average')
+plt.xlabel('time(days)'); plt.ylabel('WTD (m)')
+plt.legend()
+plt.show()

@@ -81,6 +81,9 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     """
 #    dneg = []
    
+    track_WT_drained_area = (239,166)
+    track_WT_notdrained_area = (522,190)
+    
     ele[~catchment_mask] = 0.
     ele = ele.flatten()
     phi_initial = (phi_initial + 0.0 * np.zeros((ny,nx))) * catchment_mask
@@ -120,7 +123,6 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     
     source = fp.CellVariable(mesh=mesh, value = 0.)                         # cell variable for source/sink
 #    CC=fp.CellVariable(mesh=mesh, value=C(phi.value-ele))                   # differential water capacity
-
 
     def D_value(phi, ele, tra_to_cut, cmask, drmask_not):
         # Some inputs are in fipy CellVariable type
@@ -213,26 +215,23 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
     
     #********************************************************
                                                        
-    max_sweeps = 1 # inner loop.
-
-    source.setValue((P-ET)/1000.*np.ones(ny*nx))                         # source/sink, in m/day. For steadystate! Why for steadystate?
-
-    avg_wt_over_time = []
+    max_sweeps = 10 # inner loop.
+    
+    avg_wt = []
+    wt_track_drained = []
+    wt_track_notdrained = []
     
     cumulative_Vdp = 0.
                                                              
     #********Finite volume computation******************
     for d in range(days):
-#        if d>2:
-#            timeStep = 5.
-#        if d > 20:
-#            timeStep = 3.
-#        if d > 50:
-#            timeStep = 2.
-#        if d>100:
-#            timeStep = 1.
-#        print "timeStep = ", timeStep
-#        print d
+        
+        if type(P) == type(ele): # assume it is a numpy array
+            source.setValue((P[d]-ET[d])* .001 *np.ones(ny*nx))                         # source/sink, in mm/day. The factor of 10^-3 takes into account that there are 100 x 100 m^2 in one pixel
+            print "(d,P) = ", (d, (P[d]-ET[d])* 10.)
+        else:
+            source.setValue((P-ET)* 10. *np.ones(ny*nx))
+            print "(d,P) = ", (d, (P-ET)* 10.)
         
         if plotOpt and d!= 0:
            # print "one more cross-section plot"
@@ -271,7 +270,9 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
                 print "Some value in D is negative!"
 
         # For some plots
-        avg_wt_over_time.append(np.average(phi.value-ele))
+        avg_wt.append(np.average(phi.value-ele))
+        wt_track_drained.append((phi.value - ele).reshape(ny,nx)[track_WT_drained_area])
+        wt_track_notdrained.append((phi.value - ele).reshape(ny,nx)[track_WT_notdrained_area])
     
             
         """ Volume of dry peat calc."""
@@ -281,8 +282,10 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         peat_vol_weights = utilities.PeatV_weight_calc(np.array(~dr * catchment_mask * not_peat, dtype=int))
         dry_peat_volume = utilities.PeatVolume(peat_vol_weights, (ele-phi.value).reshape(ny,nx))
         cumulative_Vdp = cumulative_Vdp + dry_peat_volume
-#        print "Dry peat volume = ", dry_peat_volume 
-#        print "Cumulative vdp = ", cumulative_Vdp
+        print "avg_wt  = ", np.average(phi.value-ele)
+#        print "wt drained = ", (phi.value - ele).reshape(ny,nx)[track_WT_drained_area]
+#        print "wt not drained = ", (phi.value - ele).reshape(ny,nx)[track_WT_notdrained_area]
+        print "Cumulative vdp = ", cumulative_Vdp
         
     if solve_mode=='steadystate': #solving in steadystate we remove water only at the very end
         if remove_ponding_water:                 
@@ -313,7 +316,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         axes[0,1].set(title='C')
         axes[1,0].plot()
         axes[1,0].set(title="Nothing")
-        axes[1,1].plot(avg_wt_over_time)
+        axes[1,1].plot(avg_wt)
         axes[1,1].set(title="avg_wt_over_time")
         
         # plot surface in cross-section
@@ -328,4 +331,4 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
 #    resulting_phi = phi.value.reshape(ny,nx)
 
 
-    return cumulative_Vdp
+    return cumulative_Vdp, wt_track_drained, wt_track_notdrained, avg_wt

@@ -49,3 +49,14 @@ def ReadInput(filename):
 
     return n_nodes, peat_height, height, block_height, n_blocks, n_canals, nodes_per_canal, originalWTcanal, srfccanal
 
+def read_precipitation():
+    """
+    Reads Pekanbaru airport 2012 weather data.
+    Returns numpy array with 2012 (1 year) daily values 
+    """
+    rainfall_fn = r"C:\Users\03125327\github\dd_winrock\data\2012_rainfall.xlsx"
+    df = pd.read_excel(rainfall_fn, names=['', 'RAW_DATA','Fill_nodata','','','','',''])
+    return df['Fill_nodata'].to_numpy()
+    
+    
+
