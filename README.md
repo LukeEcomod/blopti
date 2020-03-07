@@ -1,16 +1,5 @@
-# Damn Dams
-Canal blocking computation for Winrock.
-
-## ToDo
- 
-  - Some parts are water but not canals!
-  - Some parts are soil but not peat!
-  - Monotonical canal flow (maybe solved with Strat4?)
-  - K(z) and C(z) and the Dupuit assumptions
-  - Mask of peat area (vs soil area) for peat volume compus
-  - Does the optimization change with a change in general canal water level? How?
-  - Parameterization: K and C? And soil type / land use type.
-  - Make Excel sheet to read parameters?
+# Canal block optimization
+Canal blocking computation in Dosan, Indonesia.
 
 ## Installation
 1. Create a new environment within Conda with minimal packages:
@@ -47,7 +36,7 @@ The code needs the following data to run:
   - A DEM as a raster image.
   - A canal network as a raster image.
   - A soil type map as a raster image.
-  - (A soil depth map as a raster image.) UNDER DEV.
+  - A soil depth map as a raster image.
 
 The data must be stored in the path "data/" relative to the ```.py``` files.
 
