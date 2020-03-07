@@ -13,11 +13,19 @@ Canal blocking computation for Winrock.
   - Make Excel sheet to read parameters?
 
 ## Installation
---- Tested on Ubuntu 18.04 LTS---
 1. Create a new environment within Conda with minimal packages:
-
+### Ubuntu 18.04 LTS
 ```
-conda create -n [name of environment] -c conda-forge python=2.7 numpy scipy rasterio fipy matplotlib pandas openpyxl
+conda create -n [name of environment] -c conda-forge python=3 numpy scipy rasterio fipy matplotlib pandas xlrd
+```
+### Windows 10
+```
+conda create -n [name of environment] python=3 fipy rasterio pandas xlrd
+```
+
+If you're interested in installing it alongside Spyder, only the python 3.6 version works as of March, 2020.
+```
+conda create -n [name of environment] python=3.6 fipy rasterio
 ```
 
 Optional packages:
