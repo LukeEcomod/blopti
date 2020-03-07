@@ -54,7 +54,8 @@ def read_precipitation():
     Reads Pekanbaru airport 2012 weather data.
     Returns numpy array with 2012 (1 year) daily values 
     """
-    rainfall_fn = r"C:\Users\03125327\github\dd_winrock\data\2012_rainfall.xlsx"
+#    rainfall_fn = r"C:\Users\03125327\github\dd_winrock\data\2012_rainfall.xlsx" #Luke
+    rainfall_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/2012_rainfall.xlsx"
     df = pd.read_excel(rainfall_fn, names=['', 'RAW_DATA','Fill_nodata','','','','',''])
     return df['Fill_nodata'].to_numpy()
     
