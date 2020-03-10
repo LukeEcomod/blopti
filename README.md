@@ -2,12 +2,12 @@
 Canal blocking computation in Dosan, Indonesia.
 
 ## Installation
-1. Create a new environment within Conda with minimal packages:
-### Ubuntu 18.04 LTS
+1. Create a new environment within Conda with minimal packages (Python 2 version not tested recently, but should work similarly):
+### Ubuntu 18.04 LTS, Python 3
 ```
 conda create -n [name of environment] -c conda-forge python=3 numpy scipy rasterio fipy matplotlib pandas xlrd
 ```
-### Windows 10
+### Windows 10, Python 3
 ```
 conda create -n [name of environment] python=3 fipy rasterio pandas xlrd
 ```
@@ -27,6 +27,8 @@ Optional packages:
 3. Clone or download this repository.
 
 ## How to use?
+Choose to work either in the Python2 or the Python3 folders. The Python3 folder will be updated, but the Python2 snapshot should work.
+
 There are 3 alternative ways to run the code:
   - ```main.py``` runs the general computation without any optimization algorithm. It still allows for more than one iteration.
   - ```ga_try_2.py``` runs the Genetic Algorithm version.
