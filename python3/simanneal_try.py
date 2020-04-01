@@ -12,6 +12,7 @@ import numpy as np
 import preprocess_data,  utilities, hydro, hydro_utils
 import random
 from simanneal import Annealer
+import os
 
 
 
@@ -93,9 +94,9 @@ dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
 #land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
-#params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
-#params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
-params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
+
+abs_path_data = os.path.abspath('./data') # Absolute path to data folder needed for Excel file with parameters
+params_fn = abs_path_data + r"/params.xlsx"
 
 
 if 'CNM' and 'cr' and 'c_to_r_list' not in globals():

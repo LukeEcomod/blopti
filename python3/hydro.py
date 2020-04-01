@@ -16,7 +16,7 @@ import fipy as fp
 import matplotlib.pyplot as plt
 import copy
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable # for plots 
-from mpl_toolkits.axes_grid1.colorbar import colorbar
+
 
 import hydro_utils, utilities
 
@@ -69,18 +69,26 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
               diri_bc=0.0, neumann_bc = None, plotOpt=False, remove_ponding_water=True, P=0.0, ET=0.0, dt=1.0):
     """
     INPUT:
-        - ele: (nx,ny) sized NumPy array. Elevation in m above c.r.p.
-        - Hinitial: (nx,ny) sized NumPy array. Initial water table in m above c.r.p.
-        - catchment mask: (nx,ny) sized NumPy array. Boolean array = True where the node is inside the computation area. False if outside.
+        - solve_mode: str. 'steadystate' or 'transient'. The latter was used only
+        - ele: (nx,ny) sized NumPy array. Elevation in m above common reference point
+        - phi_initial: (nx,ny) sized NumPy array. Initial condition for h in m above common reference point
+        - catchment mask: (nx,ny) sized NumPy array. Boolean array = True where the node is inside the study area. False if outside.
         - wt_can_arr: (nx,ny) sized NumPy array. Zero everywhere except in nodes that contain canals, where = wl of the canal.
-        - value_for_masked: DEPRECATED. IT IS NOW THE SAME AS diri_bc.
-        - diri_bc: None or float. If None, Dirichlet BC will not be implemented. If float, this number will be the BC.
-        - neumann_bc: None or float. If None, Neumann BC will not be implemented. If float, this is the value of grad phi.
-        - P: Float. Constant precipitation. mm/day.
-        - ET: Float. Constant evapotranspiration. mm/day.
+        - boundary_arr: (nx,ny) sized NumPy array. Zero everywhere except boundary pixels where BC apply, with values = Dirichlet BC for phi.
+        - peat_type_mask: (nx,ny) sized NumPy array giving peat type.
+        - httd: dict. Contains interpolation functions for T and storage coeff, for each peat type.
+        - tra_to_cut and sto_to cut: (nx,ny) sized NumPy arrays. T and storage if WTD was at the impermeable bottom.
+        - diri_bc: float. USED ONLY FOR TESTING. THE ACTUAL DIRICHLET BOUNDARY CONDITIONS FOR EACH PIXEL ARE GIVEN IN boundary_arr
+        - neumann_bc: float. USED ONLY FOR TESTING. NO NEUMANN BC WERE USED IN THE FINAL VERSION.
+        - plotOpt: bool. Wether to allow some plots or not. If computing several days, it is recommended to turn False.
+        - remove_ponding_water: bool. Whether or not to remove water above the surface at each iteration. Defaults to True.
+        - P: Numpy array of length the number of days. mm/day.
+        - ET: Numpy array of length the number of days. mm/day.
+        - dt: float. Timestep in days. Defaults to 1.
     """
 #    dneg = []
    
+    # define location of points whose WTD to track in the dem
     track_WT_drained_area = (239,166)
     track_WT_notdrained_area = (522,190)
     

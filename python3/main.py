@@ -9,17 +9,12 @@ import argparse
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-#import argparse
 import time
-
+import os
 import preprocess_data,  utilities, hydro, hydro_utils, read
 
 
 plt.close("all")
-
-"""
-Read general help on main.README.txt
-"""
 
 """
 Parse command-line arguments
@@ -40,89 +35,75 @@ N_ITER = args.niter
 Read and preprocess data
 """
 
-
-""" Stratification 2 data version. Remove in the future"""
-#preprocessed_datafolder = r"data/Strat2"
-#dem_rst_fn = preprocessed_datafolder + r"/lidar_100_resampled_interp.tif"
-#can_rst_fn = preprocessed_datafolder + r"/canal_clipped_resampled_2.tif"
-#peat_type_rst_fn = preprocessed_datafolder + r"/Landcover_clipped.tif"
-#peat_depth_rst_fn = preprocessed_datafolder + r"/peat_depth.tif"
-
-"""Stratification 4  keep this!"""
 preprocessed_datafolder = r"data/Strat4"
 dem_rst_fn = preprocessed_datafolder + r"/DTM_metres_clip.tif"
 can_rst_fn = preprocessed_datafolder + r"/canals_clip.tif"
-#land_use_rst_fn = preprocessed_datafolder + r"/Landcover2017_clip.tif" # Not used
 peat_depth_rst_fn = preprocessed_datafolder + r"/Peattypedepth_clip.tif" # peat depth, peat type in the same raster
-#params_fn = r"/home/inaki/GitHub/dd_winrock/data/params.xlsx" # Luke
-params_fn = r"C:\Users\03125327\github\dd_winrock\data\params.xlsx" # Luke NEW
-#params_fn = r"/home/txart/Programming/GitHub/dd_winrock/data/params.xlsx" # home
-#params_fn = r"/homeappl/home/urzainqu/dd_winrock/data/params.xlsx" # CSC
 
+abs_path_data = os.path.abspath('./data') # Absolute path to data folder needed for Excel file with parameters
+params_fn = abs_path_data + r"/params.xlsx"
 
-if 'CNM' and 'cr' and 'c_to_r_list' not in globals():
+# Read rasters, build up canal connectivity adjacency matrix
+if 'CNM' and 'cr' and 'c_to_r_list' not in globals(): # call only if needed
     CNM, cr, c_to_r_list = preprocess_data.gen_can_matrix_and_raster_from_raster(can_rst_fn=can_rst_fn, dem_rst_fn=dem_rst_fn)
 
-#else:
-#    print "Canal adjacency matrix and raster loaded from memory."
-    
 _ , dem, peat_type_arr, peat_depth_arr = preprocess_data.read_preprocess_rasters(can_rst_fn, dem_rst_fn, peat_depth_rst_fn, peat_depth_rst_fn)
 
+# Read parameters
 PARAMS_df = preprocess_data.read_params(params_fn)
 BLOCK_HEIGHT = PARAMS_df.block_height[0]; CANAL_WATER_LEVEL = PARAMS_df.canal_water_level[0]
-DIRI_BC = PARAMS_df.diri_bc[0]; HINI = PARAMS_df.hini[0]; P = PARAMS_df.P[0]
+DIRI_BC = PARAMS_df.diri_bc[0]; HINI = PARAMS_df.hini[0];
 ET = PARAMS_df.ET[0]; TIMESTEP = PARAMS_df.timeStep[0]; KADJUST = PARAMS_df.Kadjust[0]
 
-print(">>>>> WARNING, OVERWRITING PEAT DEPTH")
-peat_depth_arr[peat_depth_arr < 2.] = 2.
+P = read.read_precipitation() # precipitation read from separate historical data
+ET = ET * np.ones(shape=P.shape)
 
-# catchment mask
+
+# Even if maps say peat depth is less than 2 meters, the impermeable bottom is at most at 2m.
+# This can potentially break the hydrological simulation if the WTD would go below 2m.
+print(">>>>> WARNING, OVERWRITING PEAT DEPTH")
+peat_depth_arr[peat_depth_arr < 2.] = 2. 
+
+# catchment mask: delimit the study area
 catchment_mask = np.ones(shape=dem.shape, dtype=bool)
 catchment_mask[np.where(dem<-10)] = False # -99999.0 is current value of dem for nodata points.
 
-# peel the dem. Only when dem is not surrounded by water
+# 'peel' the dem. Dirichlet BC will be applied at the peel.
 boundary_mask = utilities.peel_raster(dem, catchment_mask)
  
 # after peeling, catchment_mask should only be the fruit:
 catchment_mask[boundary_mask] = False
 
-# soil types and soil physical properties and soil depth:
+# soil types, soil physical properties and soil depth:
 peat_type_masked = peat_type_arr * catchment_mask
 peat_bottom_elevation = - peat_depth_arr * catchment_mask # meters with respect to dem surface. Should be negative!
-#
 
-h_to_tra_and_C_dict, K = hydro_utils.peat_map_interp_functions(Kadjust=KADJUST) # Load peatmap soil types' physical properties dictionary
+# Load peatmap soil types' physical properties dictionary.
+# Kadjust is hydraulic conductivity multiplier for sapric peat
+h_to_tra_and_C_dict, K = hydro_utils.peat_map_interp_functions(Kadjust=KADJUST) 
 
-# Plot K
-#import matplotlib.pyplot as plt
-#plt.figure(); z = np.linspace(0.0, -20.0, 400); plt.plot(K,z); plt.title('K')
-#soiltypes[soiltypes==255] = 0 # 255 is nodata value. 1 is water (useful for hydrology! Maybe, same treatment as canals).
-
-#BOTTOM_ELE = -6.0 
-#peat_bottom_elevation = np.ones(shape=dem.shape) * BOTTOM_ELE
-#peat_bottom_elevation = peat_bottom_elevation*catchment_mask
+# Transmissivity and storage are computed as: T(h) = T(h) - T(peat depth).
+#  These quantities are the latter
 tra_to_cut = hydro_utils.peat_map_h_to_tra(soil_type_mask=peat_type_masked,
                                            gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
 sto_to_cut = hydro_utils.peat_map_h_to_sto(soil_type_mask=peat_type_masked,
                                            gwt=peat_bottom_elevation, h_to_tra_and_C_dict=h_to_tra_and_C_dict)
 sto_to_cut = sto_to_cut * catchment_mask.ravel()
 
+# Water level in canals and list of pixels in canal network.
 srfcanlist =[dem[coords] for coords in c_to_r_list]
-
 n_canals = len(c_to_r_list)
 
-
-# HANDCRAFTED WATER LEVEL IN CANALS. CHANGE WITH MEASURED, IDEALLY.
 oWTcanlist = [x - CANAL_WATER_LEVEL for x in srfcanlist]
 
 hand_made_dams = True # compute performance of cherry-picked locations for dams.
-quasi_random = False # Don't allow overlapping blocks
+
 """
 MonteCarlo
 """
 for i in range(0,N_ITER):
     
-    if quasi_random == False or i==0: # Normal fully random block configurations
+    if i==0: #  random block configurations
         damLocation = np.random.randint(1, n_canals, N_BLOCKS).tolist() # Generate random kvector. 0 is not a good position in c_to_r_list
     else:
         prohibited_node_list = [i for i,_ in enumerate(oWTcanlist[1:]) if oWTcanlist[1:][i] < wt_canals[1:][i]]      # [1:] is to take the 0th element out of the loop
@@ -145,11 +126,6 @@ for i in range(0,N_ITER):
     dx = 1.; dy = 1. # metres per pixel  (Actually, pixel size is 100m x 100m, so all units have to be converted afterwards)
     
     boundary_arr = boundary_mask * (dem - DIRI_BC) # constant Dirichlet value in the boundaries
-    
-    P = read.read_precipitation()
-#    P = 0.0
-    ET = ET * np.ones(shape=P.shape)
-#    ET = ET
     
     ele = dem * catchment_mask
     
@@ -179,19 +155,15 @@ for i in range(0,N_ITER):
     
     water_blocked_canals = sum(np.subtract(wt_canals[1:], oWTcanlist[1:]))
     
-    cum_Vdp_nodams = 21088.453521509597
+    cum_Vdp_nodams = 21088.453521509597 # Value of dry peat volume without any blocks, without any precipitation for 3 days. Normalization.
     print('dry_peat_volume(%) = ', dry_peat_volume/cum_Vdp_nodams * 100. , '\n',
           'water_blocked_canals = ', water_blocked_canals)
 
     """
     Final printings
     """
-    if quasi_random == True:
-        fname = r'output/results_mc_quasi_3.txt'
-    else:
-        fname = r'output/results_mc_3_cumulative.txt'
-    if N_ITER > 20:
-        
+    fname = r'output/results_mc_3_cumulative.txt'
+    if N_ITER > 20:  # only if big enough number of simulated days
         with open(fname, 'a') as output_file:
             output_file.write(
                                 "\n" + str(i) + "    " + str(dry_peat_volume) + "    "
