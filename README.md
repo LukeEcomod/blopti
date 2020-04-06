@@ -1,3 +1,7 @@
+
+
+[![DOI](https://zenodo.org/badge/245607721.svg)](https://zenodo.org/badge/latestdoi/245607721)
+
 # Canal block optimization
 Canal blocking computation in Dosan, Indonesia.
 
