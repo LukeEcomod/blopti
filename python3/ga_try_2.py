@@ -23,8 +23,8 @@ parser = argparse.ArgumentParser(description='Run GA.')
 
 parser.add_argument('-d','--days', default=3, help='(int) Number of outermost iterations of the fipy solver, be it steadystate or transient. Default=10.', type=int)
 parser.add_argument('-b','--nblocks', default=5, help='(int) Number of blocks to locate. Default=5.', type=int)
-# parser.add_argument('-n','--nopti', default=, help='(int) Number of iterations of the optimization algorithm. Number of generations in GA. Default=100.', type=int)
-parser.add_argument('-p', '--processes', default=2, help='(int) Number of parallel processes for the optimization', type=int)
+parser.add_argument('-n','--nopti', default=1, help='(int) Number of iterations of the optimization algorithm. Number of generations in GA. Default=100.', type=int)
+parser.add_argument('-p', '--processes', default=1, help='(int) Number of parallel processes for the optimization', type=int)
 args = parser.parse_args()
 
 DAYS = args.days
@@ -32,8 +32,6 @@ N_BLOCKS = args.nblocks
 N_GENERATIONS = args.nopti
 N_PROCESSES = args.processes
 
-#N_BLOCKS = 3
-#N_GENERATIONS = 5
 
 """
 ###########################
@@ -142,12 +140,13 @@ def evalDryPeatVol(individual): # this should be returning dry peat volume in a 
         wt_canal_arr[coords] = wt_canals[canaln]
 #        phi_ini[coords] = wt_canals[canaln]
         
-    dry_peat_volume =hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
+    avg_wt = hydro.hydrology('transient', nx, ny, dx, dy, DAYS, ele, phi_ini, catchment_mask, wt_canal_arr, boundary_arr,
                                                       peat_type_mask=peat_type_masked, httd=h_to_tra_and_C_dict, tra_to_cut=tra_to_cut, sto_to_cut=sto_to_cut,
                                                       diri_bc=DIRI_BC, neumann_bc = None, plotOpt=False, remove_ponding_water=True,
                                                       P=P, ET=ET, dt=TIMESTEP)
 
-    return dry_peat_volume,
+    print(avg_wt)
+    return avg_wt,
 
 toolbox.register("evaluate", evalDryPeatVol)
 toolbox.register("mate", tools.cxOnePoint) # single point crossover

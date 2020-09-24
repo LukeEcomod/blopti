@@ -19,7 +19,6 @@ plt.close('all')
 
 fname_mc = r'results_mc_3.txt'
 fname_mc_cum = r'results_mc_3_cumulative.txt'
-fname_mc_quasi = r"results_mc_quasi_3.txt"
 fname_ga = r'results_ga_3.txt'
 fname_sa = r'results_sa_3.txt'
 fname_summary = r'concise_output_opti.txt'
@@ -30,7 +29,6 @@ colnames_ga = ['dry_peat_vol', 'ndams', 'niter', 'days', 'day_week', 'month', 'd
 #rename_cols_ga = {'day_month':'dry_peat_vol', 'niter':'ndams', 'c': 'niter', 'b':'days', 'blocks':'day_week', 'day_week':'month', 'days':'day_month', 'month':'time', 'ndams':'yr', 'a': 'b1', 'time':'b2', 'yr':'b3', 'dry_peat_vol':'b4'}
 
 mc_df = pd.read_csv(fname_mc_cum, delim_whitespace=True, header=None, names=colnames, usecols=[0,1,2,3,4,5,6,7,8,9,10])
-mc_quasi_df = pd.read_csv(fname_mc_quasi, delim_whitespace=True, header=None, names=colnames, usecols=[0,1,2,3,4,5,6,7,8,9,10])
 ga_df = pd.read_csv(fname_ga, delim_whitespace=True, header=None, names=colnames_ga, usecols=[0,1,2,3,4,5,6,7,8])
 sa_df = pd.read_csv(fname_sa, delim_whitespace=True, header=None, names=colnames_sa, usecols=[0,1,2,3,4,5,6,7,8])
 summary_df = pd.read_csv(fname_summary, delim_whitespace=True)
@@ -50,10 +48,6 @@ mc_plot_vol = mc_df[mc_df['days']==3]
 mean_mc_plot_vol = [mc_plot_vol[mc_plot_vol.ndams == i]['dry_peat_vol'].mean()/dry_peat_vol_no_dams*100 for i in number_dams]
 max_mc_plot_vol = [mc_plot_vol[mc_plot_vol.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams*100 for i in number_dams]
 min_mc_plot_vol = [mc_plot_vol[mc_plot_vol.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams*100 for i in number_dams]
-
-mean_mcquasi_plot_vol = [mc_quasi_df[mc_quasi_df.ndams == i]['dry_peat_vol'].mean()/dry_peat_vol_no_dams*100 for i in number_dams]
-max_mcquasi_plot_vol = [mc_quasi_df[mc_quasi_df.ndams == i]['dry_peat_vol'].max()/dry_peat_vol_no_dams*100 for i in number_dams]
-min_mcquasi_plot_vol = [mc_quasi_df[mc_quasi_df.ndams == i]['dry_peat_vol'].min()/dry_peat_vol_no_dams*100 for i in number_dams]
 
 
 sa_ndays = sa_df[sa_df['ndams']==20]
@@ -91,27 +85,30 @@ rule_based_cwl_vdp = np.array([np.array(summary_df[summary_df['mode'] == 'rule_b
 
 # For tomorrow: get this data rom summary_df by: 
 # summary_df[summary_df['mode'] == 'ga_simpleopti'] etc.
+#%%
 """
  Plot V_dry_peat vs ndams
 """
+MARKERSIZE = 100
 
 fig, ax = plt.subplots(1)
 ax.fill_between(number_dams, max_mc_plot_vol, min_mc_plot_vol, facecolor='wheat', alpha=0.5, label='random range')
-ax.scatter(x=number_dams, y=mean_mc_plot_vol, alpha=0.8, color='darkorange', label='random mean', marker='P')
+ax.scatter(x=number_dams[:len(rule_based_cwl_vdp[1])], y=rule_based_cwl_vdp[1], color='black', alpha=0.8, label='rule-based', s=MARKERSIZE*2)
+ax.scatter(x=number_dams, y=mean_mc_plot_vol, alpha=0.8, color='darkorange', label='random mean', marker='P', s=MARKERSIZE)
 #ax.plot(number_dams, mean_mcquasi_plot_vol, alpha=1.0, color='purple', label='quasi-random mean')
 #ax.fill_between(number_dams, max_mcquasi_plot_vol, min_mcquasi_plot_vol, facecolor='purple', alpha=0.4, label='quasi-random range')
 ax.set_xlabel('Number of blocks')
 ax.set_ylabel('Volume fraction of dry peat (%)')
 
-ax.scatter(x=sa_plot.ndams.to_numpy(), y=sa_plot.dry_peat_vol_cumulative.to_numpy(), label='SA', alpha=0.5, color='blue', marker='s')
-ax.scatter(x=ga_plot.ndams.to_numpy(), y=ga_plot.dry_peat_vol_cumulative.to_numpy(), label='GA', alpha=0.7, color='red')
-ax.scatter(x=number_dams[:len(ga_simpleopti_cwl_vdp[1])], y=ga_simpleopti_cwl_vdp[1], color='green', alpha=0.8, marker='x', label='SO')
-ax.scatter(x=number_dams[:len(rule_based_cwl_vdp[1])], y=rule_based_cwl_vdp[1], color='black', alpha=0.8, label='rule-based')
+ax.scatter(x=sa_plot.ndams.to_numpy(), y=sa_plot.dry_peat_vol_cumulative.to_numpy(), label='SA', alpha=0.5, color='blue', marker='s', s=MARKERSIZE)
+ax.scatter(x=ga_plot.ndams.to_numpy(), y=ga_plot.dry_peat_vol_cumulative.to_numpy(), label='GA', alpha=0.7, color='red', s=MARKERSIZE)
+ax.scatter(x=number_dams[:len(ga_simpleopti_cwl_vdp[1])], y=ga_simpleopti_cwl_vdp[1], color='green', alpha=0.8, marker='x', label='SO', s=MARKERSIZE)
+
 plt.legend()
 
 #fname_fig = r'results_plot.png'
 #plt.savefig(fname_fig)
-
+#%%
 
 #sns.set(style="whitegrid", palette="pastel", color_codes=True)
 #sns.catplot(x='ndams', y='dry_peat_vol', kind='violin', color='red', data=mc_plot_vol)
@@ -130,13 +127,13 @@ fig, ax = plt.subplots(1)
 ax.set_xlabel('Number of blocks')
 ax.set_ylabel('Relative improvement wrt random mean')
 
-ax.scatter(x=number_dams, y=sa_improvement/mmc_improvement, label='SA', alpha=0.5, color='blue', marker='s')
-ax.scatter(x=number_dams, y=ga_improvement/mmc_improvement, label='GA', alpha=0.7, color='red')
-ax.scatter(x=number_dams, y=simple_improvement/mmc_improvement, color='green', alpha=0.8, marker='x', label='SO')
+ax.scatter(x=number_dams, y=sa_improvement/mmc_improvement, label='SA', alpha=0.5, color='blue', marker='s', s=MARKERSIZE)
+ax.scatter(x=number_dams, y=ga_improvement/mmc_improvement, label='GA', alpha=0.7, color='red', s=MARKERSIZE)
+ax.scatter(x=number_dams, y=simple_improvement/mmc_improvement, color='green', alpha=0.8, marker='x', label='SO', s=MARKERSIZE)
 plt.grid(True, which='major', axis='y')
 #plt.legend()
 
-
+#%%
 """
 Plot MB
 """
@@ -165,11 +162,11 @@ mb_sopti = mb_opti[-2:]
 fig, ax = plt.subplots(1)
 ax.set_xlabel('d')
 ax.set_ylabel('MB(d) %')
-ax.scatter(x= mb_dams[0:-3], y=mb_ga, label='GA', alpha=0.7, color='red')
-ax.scatter(x= mb_dams[-3:-1], y=mb_sopti, color='green', alpha=0.8, marker='x', label='SO')
-ax.scatter(x= mb_dams[:-1], y=mb_random, alpha=0.8, color='darkorange', label='random mean', marker='P')
+ax.scatter(x= mb_dams[0:-3], y=mb_ga, label='GA', alpha=0.7, color='red', s=MARKERSIZE)
+ax.scatter(x= mb_dams[-3:-1], y=mb_sopti, color='green', alpha=0.8, marker='x', label='SO', s=MARKERSIZE)
+ax.scatter(x= mb_dams[:-1], y=mb_random, alpha=0.8, color='darkorange', label='random mean', marker='P', s=MARKERSIZE)
 
-
+#%%
 """
 Plot dry vs ndays
 """
@@ -183,7 +180,7 @@ dpv = {3: 8255.131496485912, 5: 10425.012343947397, 10: 14688.078154032499, 15:1
 
 mc_mean_dpv = []; mc_min_dpv = []; mc_max_dpv = []
 sa_days = []
-for day in sorted(dpv.iterkeys()):
+for day in sorted(dpv.keys()):
     mc_mean_dpv.append( mc_df_ndays[mc_df_ndays.days == day]['dry_peat_vol'].mean()/dpv[day]*100 )
     mc_max_dpv.append( mc_df_ndays[mc_df_ndays.days == day]['dry_peat_vol'].max()/dpv[day]*100 )
     mc_min_dpv.append( mc_df_ndays[mc_df_ndays.days == day]['dry_peat_vol'].min()/dpv[day]*100 )
@@ -295,7 +292,7 @@ ax1.plot(df_wtd_0['drained'].index, df_wtd_0['drained'].values, label='drained, 
 
 
 plt.grid(True, axis='y', color='grey', alpha=0.4)
-leg = plt.legend()
+leg = plt.legend(bbox_to_anchor=(1.05, 1.0), loc='upper left')
 for lh in leg.legendHandles:
     lh._legmarker.set_alpha(1)
 

@@ -337,6 +337,7 @@ def hydrology(solve_mode, nx, ny, dx, dy, days, ele, phi_initial, catchment_mask
         
 #    change_in_canals = (ele-phi.value).reshape(ny,nx)*(drmask.value.reshape(ny,nx)) - ((ele-H)*drmask.value).reshape(ny,nx)
 #    resulting_phi = phi.value.reshape(ny,nx)
-
-
-    return cumulative_Vdp, wt_track_drained, wt_track_notdrained, avg_wt
+        
+    avg_wt_over_time = np.mean(np.array(avg_wt))        
+    
+    return avg_wt_over_time
